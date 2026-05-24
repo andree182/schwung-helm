@@ -167,56 +167,184 @@ static void load_preset_by_index(helm_instance_t *inst, int idx) {
  * JSON builders for ui_hierarchy and chain_params
  * ===================================================================== */
 static void build_ui_hierarchy(helm_instance_t *inst) {
-  const int bufsize = 4096;
+  const int bufsize = 16384;
   inst->ui_hierarchy_json = (char *)malloc(bufsize);
   if (!inst->ui_hierarchy_json)
     return;
 
   snprintf(inst->ui_hierarchy_json, bufsize,
-      "{"
-      "\"modes\":null,"
-      "\"levels\":{"
-          "\"root\":{"
-              "\"list_param\":\"preset\","
-              "\"count_param\":\"preset_count\","
-              "\"name_param\":\"preset_name\","
-              "\"children\":\"main\","
-              "\"knobs\":[\"octave_transpose\"],"
-              "\"params\":[]"
-          "},"
-          "\"main\":{"
-              "\"children\":null,"
-              "\"knobs\":[\"octave_transpose\"],"
-              "\"params\":["
-                  "{\"level\":\"category_jump\",\"label\":\"Jump to Category\"}"
-              "]"
-          "},"
-          "\"category_jump\":{"
-              "\"label\":\"Jump to Category\","
-              "\"items_param\":\"category_list\","
-              "\"select_param\":\"jump_to_category\","
-              "\"navigate_to\":\"root\","
-              "\"children\":null,"
-              "\"knobs\":[],"
-              "\"params\":[]"
-          "}"
-      "}"
-      "}");
+           "{"
+           "\"modes\":null,"
+           "\"levels\":{"
+           "\"root\":{"
+           "\"list_param\":\"preset\","
+           "\"count_param\":\"preset_count\","
+           "\"name_param\":\"preset_name\","
+           "\"children\":\"main\","
+           "\"knobs\":[\"cutoff\",\"resonance\",\"fil_env_depth\",\"amp_attack\",\"amp_decay\",\"amp_sustain\",\"amp_release\",\"volume\"],"
+           "\"params\":[]"
+           "},"
+           "\"main\":{"
+           "\"children\":null,"
+           "\"knobs\":[\"cutoff\",\"resonance\",\"fil_env_depth\",\"amp_attack\",\"amp_decay\",\"amp_sustain\",\"amp_release\",\"volume\"],"
+           "\"params\":["
+           "{\"level\":\"category_jump\",\"label\":\"Jump to Category\"},"
+           "{\"level\":\"osc1\",\"label\":\"Oscillator 1\"},"
+           "{\"level\":\"osc2\",\"label\":\"Oscillator 2\"},"
+           "{\"level\":\"sub_osc\",\"label\":\"Sub Oscillator\"},"
+           "{\"level\":\"noise_feedback\",\"label\":\"Noise / Feedback\"},"
+           "{\"level\":\"filter\",\"label\":\"Filter\"},"
+           "{\"level\":\"amp_env\",\"label\":\"Amp Envelope\"},"
+           "{\"level\":\"filter_env\",\"label\":\"Filter Envelope\"},"
+           "{\"level\":\"mod_env\",\"label\":\"Mod Envelope\"},"
+           "{\"level\":\"mono_lfo_1\",\"label\":\"Mono LFO 1\"},"
+           "{\"level\":\"mono_lfo_2\",\"label\":\"Mono LFO 2\"},"
+           "{\"level\":\"poly_lfo\",\"label\":\"Poly LFO\"},"
+           "{\"level\":\"formant\",\"label\":\"Formant\"},"
+           "{\"level\":\"distortion\",\"label\":\"Distortion\"},"
+           "{\"level\":\"delay\",\"label\":\"Delay\"},"
+           "{\"level\":\"reverb\",\"label\":\"Reverb\"},"
+           "{\"level\":\"stutter\",\"label\":\"Stutter\"},"
+           "{\"level\":\"settings\",\"label\":\"Settings\"}"
+           "]"
+           "},"
+           "\"category_jump\":{"
+           "\"label\":\"Jump to Category\","
+           "\"items_param\":\"category_list\","
+           "\"select_param\":\"jump_to_category\","
+           "\"navigate_to\":\"root\","
+           "\"children\":null,"
+           "\"knobs\":[],"
+           "\"params\":[]"
+           "},"
+           "\"osc1\":{"
+           "\"children\":null,"
+           "\"knobs\":[\"osc_1_waveform\",\"osc_1_volume\",\"osc_1_transpose\",\"osc_1_tune\",\"osc_1_unison_voices\",\"osc_1_unison_detune\",\"unison_1_harmonize\"],"
+           "\"params\":[\"osc_1_waveform\",\"osc_1_volume\",\"osc_1_transpose\",\"osc_1_tune\",\"osc_1_unison_voices\",\"osc_1_unison_detune\",\"unison_1_harmonize\"]"
+           "},"
+           "\"osc2\":{"
+           "\"children\":null,"
+           "\"knobs\":[\"osc_2_waveform\",\"osc_2_volume\",\"osc_2_transpose\",\"osc_2_tune\",\"osc_2_unison_voices\",\"osc_2_unison_detune\",\"unison_2_harmonize\"],"
+           "\"params\":[\"osc_2_waveform\",\"osc_2_volume\",\"osc_2_transpose\",\"osc_2_tune\",\"osc_2_unison_voices\",\"osc_2_unison_detune\",\"unison_2_harmonize\"]"
+           "},"
+           "\"sub_osc\":{"
+           "\"children\":null,"
+           "\"knobs\":[\"sub_waveform\",\"sub_volume\",\"sub_octave\",\"sub_shuffle\"],"
+           "\"params\":[\"sub_waveform\",\"sub_volume\",\"sub_octave\",\"sub_shuffle\"]"
+           "},"
+           "\"noise_feedback\":{"
+           "\"children\":null,"
+           "\"knobs\":[\"noise_volume\",\"osc_feedback_amount\",\"osc_feedback_transpose\",\"osc_feedback_tune\"],"
+           "\"params\":[\"noise_volume\",\"osc_feedback_amount\",\"osc_feedback_transpose\",\"osc_feedback_tune\"]"
+           "},"
+           "\"filter\":{"
+           "\"children\":null,"
+           "\"knobs\":[\"filter_on\",\"filter_style\",\"filter_blend\",\"filter_shelf\",\"cutoff\",\"resonance\",\"keytrack\",\"filter_drive\"],"
+           "\"params\":[\"filter_on\",\"filter_style\",\"filter_blend\",\"filter_shelf\",\"cutoff\",\"resonance\",\"keytrack\",\"filter_drive\"]"
+           "},"
+           "\"amp_env\":{"
+           "\"children\":null,"
+           "\"knobs\":[\"amp_attack\",\"amp_decay\",\"amp_sustain\",\"amp_release\"],"
+           "\"params\":[\"amp_attack\",\"amp_decay\",\"amp_sustain\",\"amp_release\"]"
+           "},"
+           "\"filter_env\":{"
+           "\"children\":null,"
+           "\"knobs\":[\"fil_attack\",\"fil_decay\",\"fil_sustain\",\"fil_release\",\"fil_env_depth\"],"
+           "\"params\":[\"fil_attack\",\"fil_decay\",\"fil_sustain\",\"fil_release\",\"fil_env_depth\"]"
+           "},"
+           "\"mod_env\":{"
+           "\"children\":null,"
+           "\"knobs\":[\"mod_attack\",\"mod_decay\",\"mod_sustain\",\"mod_release\"],"
+           "\"params\":[\"mod_attack\",\"mod_decay\",\"mod_sustain\",\"mod_release\"]"
+           "},"
+           "\"mono_lfo_1\":{"
+           "\"children\":null,"
+           "\"knobs\":[\"mono_lfo_1_waveform\",\"mono_lfo_1_amplitude\",\"mono_lfo_1_frequency\",\"mono_lfo_1_sync\",\"mono_lfo_1_tempo\",\"mono_lfo_1_retrigger\"],"
+           "\"params\":[\"mono_lfo_1_waveform\",\"mono_lfo_1_amplitude\",\"mono_lfo_1_frequency\",\"mono_lfo_1_sync\",\"mono_lfo_1_tempo\",\"mono_lfo_1_retrigger\"]"
+           "},"
+           "\"mono_lfo_2\":{"
+           "\"children\":null,"
+           "\"knobs\":[\"mono_lfo_2_waveform\",\"mono_lfo_2_amplitude\",\"mono_lfo_2_frequency\",\"mono_lfo_2_sync\",\"mono_lfo_2_tempo\",\"mono_lfo_2_retrigger\"],"
+           "\"params\":[\"mono_lfo_2_waveform\",\"mono_lfo_2_amplitude\",\"mono_lfo_2_frequency\",\"mono_lfo_2_sync\",\"mono_lfo_2_tempo\",\"mono_lfo_2_retrigger\"]"
+           "},"
+           "\"poly_lfo\":{"
+           "\"children\":null,"
+           "\"knobs\":[\"poly_lfo_waveform\",\"poly_lfo_amplitude\",\"poly_lfo_frequency\",\"poly_lfo_sync\",\"poly_lfo_tempo\"],"
+           "\"params\":[\"poly_lfo_waveform\",\"poly_lfo_amplitude\",\"poly_lfo_frequency\",\"poly_lfo_sync\",\"poly_lfo_tempo\"]"
+           "},"
+           "\"formant\":{"
+           "\"children\":null,"
+           "\"knobs\":[\"formant_on\",\"formant_x\",\"formant_y\"],"
+           "\"params\":[\"formant_on\",\"formant_x\",\"formant_y\"]"
+           "},"
+           "\"distortion\":{"
+           "\"children\":null,"
+           "\"knobs\":[\"distortion_on\",\"distortion_type\",\"distortion_drive\",\"distortion_mix\"],"
+           "\"params\":[\"distortion_on\",\"distortion_type\",\"distortion_drive\",\"distortion_mix\"]"
+           "},"
+           "\"delay\":{"
+           "\"children\":null,"
+           "\"knobs\":[\"delay_on\",\"delay_dry_wet\",\"delay_feedback\",\"delay_frequency\",\"delay_sync\",\"delay_tempo\"],"
+           "\"params\":[\"delay_on\",\"delay_dry_wet\",\"delay_feedback\",\"delay_frequency\",\"delay_sync\",\"delay_tempo\"]"
+           "},"
+           "\"reverb\":{"
+           "\"children\":null,"
+           "\"knobs\":[\"reverb_on\",\"reverb_dry_wet\",\"reverb_feedback\",\"reverb_damping\"],"
+           "\"params\":[\"reverb_on\",\"reverb_dry_wet\",\"reverb_feedback\",\"reverb_damping\"]"
+           "},"
+           "\"stutter\":{"
+           "\"children\":null,"
+           "\"knobs\":[\"stutter_on\",\"stutter_frequency\",\"stutter_sync\",\"stutter_tempo\",\"stutter_softness\",\"stutter_resample_frequency\",\"stutter_resample_sync\",\"stutter_resample_tempo\"],"
+           "\"params\":[\"stutter_on\",\"stutter_frequency\",\"stutter_sync\",\"stutter_tempo\",\"stutter_softness\",\"stutter_resample_frequency\",\"stutter_resample_sync\",\"stutter_resample_tempo\"]"
+           "},"
+           "\"settings\":{"
+           "\"children\":null,"
+           "\"knobs\":[\"volume\",\"polyphony\",\"portamento\",\"portamento_type\",\"legato\",\"pitch_bend_range\",\"velocity_track\"],"
+           "\"params\":[\"volume\",\"polyphony\",\"portamento\",\"portamento_type\",\"legato\",\"pitch_bend_range\",\"velocity_track\"]"
+           "}"
+           "}"
+           "}");
 }
 
 static void build_chain_params(helm_instance_t *inst) {
-  const int bufsize = 2048;
+  const int bufsize = 32768;
   inst->chain_params_json = (char *)malloc(bufsize);
   if (!inst->chain_params_json)
     return;
 
-  snprintf(inst->chain_params_json, bufsize,
+  int offset = 0;
+  offset += snprintf(inst->chain_params_json + offset, bufsize - offset,
            "["
-           "{\"key\":\"preset\",\"name\":\"Preset\",\"type\":\"int\",\"min\":0,"
-           "\"max\":9999}"
-           ",{\"key\":\"octave_transpose\",\"name\":\"Octave\",\"type\":"
-           "\"int\",\"min\":-3,\"max\":3}"
-           "]");
+           "{\"key\":\"preset\",\"name\":\"Preset\",\"type\":\"int\",\"min\":0,\"max\":9999}"
+           ",{\"key\":\"octave_transpose\",\"name\":\"Octave\",\"type\":\"int\",\"min\":-3,\"max\":3}");
+
+  std::map<std::string, mopo::ValueDetails> all_details = mopo::Parameters::lookup_.getAllDetails();
+  for (const auto &item : all_details) {
+    const mopo::ValueDetails &details = item.second;
+    
+    // Skip step sequencer and modulations as requested
+    if (details.name.rfind("step_seq_", 0) == 0 || 
+        details.name == "num_steps" || 
+        details.name == "step_frequency" ||
+        details.name == "step_sequencer_retrigger" ||
+        details.name == "step_sequencer_sync" ||
+        details.name == "step_sequencer_tempo" ||
+        details.name == "step_smoothing") {
+      continue;
+    }
+    
+    const char *type_str = (details.steps > 0) ? "int" : "float";
+    
+    offset += snprintf(inst->chain_params_json + offset, bufsize - offset,
+             ",{\"key\":\"%s\",\"name\":\"%s\",\"type\":\"%s\",\"min\":%f,\"max\":%f}",
+             details.name.c_str(),
+             details.display_name.c_str(),
+             type_str,
+             details.min,
+             details.max);
+  }
+
+  offset += snprintf(inst->chain_params_json + offset, bufsize - offset, "]");
 }
 
 /* =====================================================================
@@ -379,6 +507,14 @@ static void v2_set_param(void *instance, const char *key, const char *val) {
     }
     return;
   }
+
+  /* Generic Helm parameter setter */
+  mopo::control_map &controls = inst->synth->getControls();
+  if (controls.count(key)) {
+    float v = (float)atof(val);
+    controls[key]->set(v);
+    return;
+  }
 }
 
 static int v2_get_param(void *instance, const char *key, char *buf,
@@ -446,6 +582,12 @@ static int v2_get_param(void *instance, const char *key, char *buf,
       return len;
     }
     return -1;
+  }
+
+  /* Generic Helm parameter getter */
+  mopo::control_map &controls = inst->synth->getControls();
+  if (controls.count(key)) {
+    return snprintf(buf, buf_len, "%f", controls[key]->value());
   }
 
   return -1;
