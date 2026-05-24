@@ -301,7 +301,6 @@ static void v2_destroy_instance(void *instance) {
 
 static void v2_on_midi(void *instance, const uint8_t *msg, int len,
                        int source) {
-  return;
   helm_instance_t *inst = (helm_instance_t *)instance;
   if (!inst || !inst->synth || len < 1)
     return;
@@ -331,7 +330,6 @@ static void v2_on_midi(void *instance, const uint8_t *msg, int len,
 }
 
 static void v2_set_param(void *instance, const char *key, const char *val) {
-  return;
   helm_instance_t *inst = (helm_instance_t *)instance;
   if (!inst || !inst->synth)
     return;
@@ -410,7 +408,6 @@ static int v2_get_param(void *instance, const char *key, char *buf,
 
 static void v2_render_block(void *instance, int16_t *out_interleaved_lr,
                             int frames) {
-  return;
   helm_instance_t *inst = (helm_instance_t *)instance;
   if (!inst || !inst->synth) {
     memset(out_interleaved_lr, 0, frames * 4);
