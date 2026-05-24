@@ -115,6 +115,13 @@ typedef struct helm_instance_t {
   juce::Array<juce::File> patches;
   std::map<std::string, juce::String> save_info;
 
+  /* Patch Categories */
+  struct category_entry {
+    char name[64];
+    int first_idx;
+  };
+  std::vector<category_entry> categories;
+
   /* Thread-safe MIDI queue */
   juce::CriticalSection midi_lock;
   juce::MidiBuffer midi_queue;
@@ -141,29 +148,18 @@ typedef struct helm_instance_t {
  * Preset loading
  * ===================================================================== */
 static void load_preset_by_index(helm_instance_t *inst, int idx) {
-  char msg[128];
-  snprintf(msg, sizeof(msg), "%s %d", __func__, __LINE__);
-  plugin_log(msg);
   if (!inst->synth || idx < 0 || idx >= inst->preset_count)
     return;
 
-  snprintf(msg, sizeof(msg), "%s %d", __func__, __LINE__);
-  plugin_log(msg);
   LoadSave::loadPatchFile(inst->patches[idx], inst->synth, inst->save_info);
   inst->current_preset = idx;
 
-  snprintf(msg, sizeof(msg), "%s %d", __func__, __LINE__);
-  plugin_log(msg);
   juce::String name = inst->patches[idx].getFileNameWithoutExtension();
   strncpy(inst->preset_name, name.toRawUTF8(), sizeof(inst->preset_name) - 1);
   inst->preset_name[sizeof(inst->preset_name) - 1] = '\0';
 
-  snprintf(msg, sizeof(msg), "%s %d", __func__, __LINE__);
-  plugin_log(msg);
-
+  char msg[128];
   snprintf(msg, sizeof(msg), "Loaded preset [%d]: %s", idx, inst->preset_name);
-  plugin_log(msg);
-  snprintf(msg, sizeof(msg), "%s %d", __func__, __LINE__);
   plugin_log(msg);
 }
 
@@ -177,24 +173,35 @@ static void build_ui_hierarchy(helm_instance_t *inst) {
     return;
 
   snprintf(inst->ui_hierarchy_json, bufsize,
-           "{"
-           "\"modes\":null,"
-           "\"levels\":{"
-           "\"root\":{"
-           "\"list_param\":\"preset\","
-           "\"count_param\":\"preset_count\","
-           "\"name_param\":\"preset_name\","
-           "\"children\":\"main\","
-           "\"knobs\":[\"octave_transpose\"],"
-           "\"params\":[]"
-           "},"
-           "\"main\":{"
-           "\"children\":null,"
-           "\"knobs\":[\"octave_transpose\"],"
-           "\"params\":[]"
-           "}"
-           "}"
-           "}");
+      "{"
+      "\"modes\":null,"
+      "\"levels\":{"
+          "\"root\":{"
+              "\"list_param\":\"preset\","
+              "\"count_param\":\"preset_count\","
+              "\"name_param\":\"preset_name\","
+              "\"children\":\"main\","
+              "\"knobs\":[\"octave_transpose\"],"
+              "\"params\":[]"
+          "},"
+          "\"main\":{"
+              "\"children\":null,"
+              "\"knobs\":[\"octave_transpose\"],"
+              "\"params\":["
+                  "{\"level\":\"category_jump\",\"label\":\"Jump to Category\"}"
+              "]"
+          "},"
+          "\"category_jump\":{"
+              "\"label\":\"Jump to Category\","
+              "\"items_param\":\"category_list\","
+              "\"select_param\":\"jump_to_category\","
+              "\"navigate_to\":\"root\","
+              "\"children\":null,"
+              "\"knobs\":[],"
+              "\"params\":[]"
+          "}"
+      "}"
+      "}");
 }
 
 static void build_chain_params(helm_instance_t *inst) {
@@ -265,24 +272,32 @@ static void *v2_create_instance(const char *module_dir,
   inst->patches = LoadSave::getAllPatches();
   inst->preset_count = inst->patches.size();
 
+  inst->categories.clear();
+  std::string last_cat_name = "";
+  for (int i = 0; i < inst->preset_count; i++) {
+    juce::String category = inst->patches[i].getParentDirectory().getFileName();
+    std::string cat_name = category.toStdString();
+    if (cat_name != last_cat_name) {
+      helm_instance_t::category_entry entry;
+      strncpy(entry.name, cat_name.c_str(), sizeof(entry.name) - 1);
+      entry.name[sizeof(entry.name) - 1] = '\0';
+      entry.first_idx = i;
+      inst->categories.push_back(entry);
+      last_cat_name = cat_name;
+    }
+  }
+
   char msg[128];
-  snprintf(msg, sizeof(msg), "Scanned %d presets in %s", inst->preset_count,
-           patches_path);
+  snprintf(msg, sizeof(msg), "Scanned %d presets and %d categories in %s",
+           inst->preset_count, (int)inst->categories.size(), patches_path);
   plugin_log(msg);
 
   if (inst->preset_count > 0) {
     load_preset_by_index(inst, 0);
   }
 
-  snprintf(msg, sizeof(msg), "UI");
-  plugin_log(msg);
   build_ui_hierarchy(inst);
-  snprintf(msg, sizeof(msg), "chain");
-  plugin_log(msg);
   build_chain_params(inst);
-
-  snprintf(msg, sizeof(msg), "init done");
-  plugin_log(msg);
 
   return inst;
 }
@@ -356,6 +371,14 @@ static void v2_set_param(void *instance, const char *key, const char *val) {
     inst->midi_queue.addEvent(juce::MidiMessage::allNotesOff(1), 0);
     return;
   }
+
+  if (strcmp(key, "jump_to_category") == 0) {
+    int idx = atoi(val);
+    if (idx >= 0 && idx < (int)inst->categories.size()) {
+      load_preset_by_index(inst, inst->categories[idx].first_idx);
+    }
+    return;
+  }
 }
 
 static int v2_get_param(void *instance, const char *key, char *buf,
@@ -384,6 +407,28 @@ static int v2_get_param(void *instance, const char *key, char *buf,
       return snprintf(buf, buf_len, "%s", category.toRawUTF8());
     }
     return snprintf(buf, buf_len, "Factory Presets");
+  }
+
+  if (strcmp(key, "category_list") == 0) {
+    std::string json = "[";
+    for (size_t i = 0; i < inst->categories.size(); i++) {
+      if (i > 0) json += ",";
+      json += "{\"index\":" + std::to_string(i) + ",\"label\":\"";
+      for (const char *p = inst->categories[i].name; *p; p++) {
+        if (*p == '"' || *p == '\\') {
+          json += '\\';
+        }
+        json += *p;
+      }
+      json += "\"}";
+    }
+    json += "]";
+    int len = (int)json.size();
+    if (len < buf_len) {
+      strcpy(buf, json.c_str());
+      return len;
+    }
+    return -1;
   }
 
   if (strcmp(key, "ui_hierarchy") == 0 && inst->ui_hierarchy_json) {
