@@ -182,7 +182,9 @@ static void build_ui_hierarchy(helm_instance_t *inst) {
            "\"name_param\":\"preset_name\","
            "\"children\":\"main\","
            "\"knobs\":[\"cutoff\",\"resonance\",\"fil_env_depth\",\"amp_attack\",\"amp_decay\",\"amp_sustain\",\"amp_release\",\"volume\"],"
-           "\"params\":[]"
+           "\"params\":["
+           "{\"level\":\"category_jump\",\"label\":\"Jump to Category\"}"
+           "]"
            "},"
            "\"main\":{"
            "\"children\":null,"
@@ -200,6 +202,7 @@ static void build_ui_hierarchy(helm_instance_t *inst) {
            "{\"level\":\"mono_lfo_1\",\"label\":\"Mono LFO 1\"},"
            "{\"level\":\"mono_lfo_2\",\"label\":\"Mono LFO 2\"},"
            "{\"level\":\"poly_lfo\",\"label\":\"Poly LFO\"},"
+           "{\"level\":\"step_sequencer\",\"label\":\"Step Sequencer\"},"
            "{\"level\":\"formant\",\"label\":\"Formant\"},"
            "{\"level\":\"distortion\",\"label\":\"Distortion\"},"
            "{\"level\":\"delay\",\"label\":\"Delay\"},"
@@ -272,6 +275,15 @@ static void build_ui_hierarchy(helm_instance_t *inst) {
            "\"knobs\":[\"poly_lfo_waveform\",\"poly_lfo_amplitude\",\"poly_lfo_frequency\",\"poly_lfo_sync\",\"poly_lfo_tempo\"],"
            "\"params\":[\"poly_lfo_waveform\",\"poly_lfo_amplitude\",\"poly_lfo_frequency\",\"poly_lfo_sync\",\"poly_lfo_tempo\"]"
            "},"
+           "\"step_sequencer\":{"
+           "\"children\":null,"
+           "\"knobs\":[\"num_steps\",\"step_frequency\",\"step_sequencer_retrigger\",\"step_sequencer_sync\",\"step_sequencer_tempo\",\"step_smoothing\"],"
+           "\"params\":[\"num_steps\",\"step_frequency\",\"step_sequencer_retrigger\",\"step_sequencer_sync\",\"step_sequencer_tempo\",\"step_smoothing\","
+           "\"step_seq_00\",\"step_seq_01\",\"step_seq_02\",\"step_seq_03\",\"step_seq_04\",\"step_seq_05\",\"step_seq_06\",\"step_seq_07\","
+           "\"step_seq_08\",\"step_seq_09\",\"step_seq_10\",\"step_seq_11\",\"step_seq_12\",\"step_seq_13\",\"step_seq_14\",\"step_seq_15\","
+           "\"step_seq_16\",\"step_seq_17\",\"step_seq_18\",\"step_seq_19\",\"step_seq_20\",\"step_seq_21\",\"step_seq_22\",\"step_seq_23\","
+           "\"step_seq_24\",\"step_seq_25\",\"step_seq_26\",\"step_seq_27\",\"step_seq_28\",\"step_seq_29\",\"step_seq_30\",\"step_seq_31\"]"
+           "},"
            "\"formant\":{"
            "\"children\":null,"
            "\"knobs\":[\"formant_on\",\"formant_x\",\"formant_y\"],"
@@ -321,17 +333,6 @@ static void build_chain_params(helm_instance_t *inst) {
   std::map<std::string, mopo::ValueDetails> all_details = mopo::Parameters::lookup_.getAllDetails();
   for (const auto &item : all_details) {
     const mopo::ValueDetails &details = item.second;
-    
-    // Skip step sequencer and modulations as requested
-    if (details.name.rfind("step_seq_", 0) == 0 || 
-        details.name == "num_steps" || 
-        details.name == "step_frequency" ||
-        details.name == "step_sequencer_retrigger" ||
-        details.name == "step_sequencer_sync" ||
-        details.name == "step_sequencer_tempo" ||
-        details.name == "step_smoothing") {
-      continue;
-    }
     
     const char *type_str = (details.steps > 0) ? "int" : "float";
     
