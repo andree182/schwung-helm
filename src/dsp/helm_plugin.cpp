@@ -485,6 +485,7 @@ static void build_ui_hierarchy(helm_instance_t *inst) {
                      "\"children\":null,"
                      "\"knobs\":[\"num_steps\",\"step_frequency\",\"step_sequencer_retrigger\",\"step_sequencer_sync\",\"step_sequencer_tempo\",\"step_smoothing\"],"
                      "\"params\":[\"num_steps\",\"step_frequency\",\"step_sequencer_retrigger\",\"step_sequencer_sync\",\"step_sequencer_tempo\",\"step_smoothing\","
+                     // TODO: this doesn't work, floats are not shown/editable
                      "\"step_seq_00\",\"step_seq_01\",\"step_seq_02\",\"step_seq_03\",\"step_seq_04\",\"step_seq_05\",\"step_seq_06\",\"step_seq_07\","
                      "\"step_seq_08\",\"step_seq_09\",\"step_seq_10\",\"step_seq_11\",\"step_seq_12\",\"step_seq_13\",\"step_seq_14\",\"step_seq_15\","
                      "\"step_seq_16\",\"step_seq_17\",\"step_seq_18\",\"step_seq_19\",\"step_seq_20\",\"step_seq_21\",\"step_seq_22\",\"step_seq_23\","
