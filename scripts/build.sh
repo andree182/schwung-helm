@@ -54,7 +54,7 @@ cmake -B build \
 
 # Build
 echo "Building (this may take a while)..."
-cmake --build build --target surge-move-plugin -j$(nproc) 2>&1
+cmake --build build --target helm-move-plugin -j$(nproc) 2>&1
 
 # Package
 echo "Packaging..."
