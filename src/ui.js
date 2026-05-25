@@ -1,5 +1,5 @@
 /*
- * Surge XT UI for Move Anything
+ * Helm UI for Schwung
  *
  * Uses shared sound generator UI base for consistent preset browsing.
  * Parameter editing via shadow UI hierarchy when in chain context.
@@ -10,16 +10,16 @@
 /* Shared utilities - absolute path for module location independence */
 import { createSoundGeneratorUI } from '/data/UserData/schwung/shared/sound_generator_ui.mjs';
 
-/* Create the UI with Surge-specific customizations */
+/* Create the UI with Helm-specific customizations */
 const ui = createSoundGeneratorUI({
     moduleName: 'Helm',
 
     onInit: (state) => {
-        /* Any Surge-specific initialization */
+        /* Any Helm-specific initialization */
     },
 
     onTick: (state) => {
-        /* Any Surge-specific per-tick updates */
+        /* Any Helm-specific per-tick updates */
     },
 
     onPresetChange: (preset) => {
