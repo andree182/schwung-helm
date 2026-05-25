@@ -720,8 +720,16 @@ static void *v2_create_instance(const char *module_dir,
            inst->preset_count, (int)inst->categories.size(), patches_path);
   plugin_log(msg);
 
+  int default_idx = 0;
+  for (int i = 0; i < inst->preset_count; i++) {
+    juce::String name = inst->patches[i].getFileNameWithoutExtension();
+    if (name == "Move Organ") {
+      default_idx = i;
+      break;
+    }
+  }
   if (inst->preset_count > 0) {
-    load_preset_by_index(inst, 0);
+    load_preset_by_index(inst, default_idx);
   }
 
   build_ui_hierarchy(inst);

@@ -74,6 +74,8 @@ if [ -d "src/dsp/helm/patches" ]; then
     echo "Copying Helm factory patches..."
     mkdir -p dist/helm/helm-data/patches
     cp -r "src/dsp/helm/patches/Factory Presets" dist/helm/helm-data/patches/
+    mkdir -p "dist/helm/helm-data/patches/Factory Presets/Keys"
+    cp "data/Move Organ.helm" "dist/helm/helm-data/patches/Factory Presets/Keys/"
 fi
 
 # Create tarball for release
