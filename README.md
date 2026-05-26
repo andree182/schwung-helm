@@ -1,10 +1,25 @@
 # Helm for Schwung
 
-Hybrid synthesizer module based on Helm by Matt Tytel.
+Hybrid synthesizer module based on [Helm](https://github.com/andree182/helm) by Matt Tytel.
 
 ## Features
 
-+- the same as original, including modulations
++- the same as original, including modulations (editable in the Move interface):
+
+* 32 voice polyphony
+* Interactive visual interface
+* Powerful modulation system with live visual feedback
+* Dual oscillators with cross modulation and up to 15 unison oscillators each
+* Sub oscillator with shuffle waveshaping
+* Oscillator feedback and saturation for waveshaping
+* 12 different waveforms
+* Blending between 12 or 24dB low/band/high pass filter
+* Low/Band/High Shelf filters
+* 2 monophonic and 1 polyphonic LFO
+* Step sequencer
+* Lots of modulation sources including polyphonic aftertouch (e.g. Move's pads)
+* Simple arpeggiator
+* Effects: Formant filter, stutter, delay, distortion, reverb
 
 ## Prerequisites
 
