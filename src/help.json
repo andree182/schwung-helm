@@ -1,24 +1,23 @@
 {
-  "title": "Surge XT",
+  "title": "Helm",
   "children": [
     {
       "title": "Overview",
       "lines": [
-        "Surge XT hybrid",
-        "synthesizer.",
+        "Helm polyphonic",
+        "subtractive synth.",
         "",
-        "Wavetable, FM,",
-        "subtractive, and",
-        "physical modeling",
-        "synthesis modes.",
+        "2 oscillators, 1",
+        "sub oscillator,",
+        "1 noise source,",
+        "1 multi-mode filter,",
+        "3 envelopes, and",
+        "3 LFOs.",
         "",
-        "3 oscillators, 2",
-        "filters, 3 LFOs,",
-        "and full ADSR",
-        "envelopes.",
-        "",
-        "Factory preset",
-        "library included."
+        "Includes a step",
+        "sequencer, deep",
+        "modulation matrix,",
+        "and 5 FX units."
       ]
     },
     {
@@ -28,13 +27,13 @@
           "title": "Knob Mapping",
           "lines": [
             "Knob 1: Cutoff",
-            " Filter 1 frequency",
+            " Filter cutoff freq",
             "",
             "Knob 2: Resonance",
-            " Filter 1 resonance",
+            " Filter resonance",
             "",
-            "Knob 3: Filter Env",
-            " Envelope mod depth",
+            "Knob 3: Filt Env",
+            " Filt Env Depth",
             "",
             "Knob 4: Attack",
             "Knob 5: Decay",
@@ -42,166 +41,129 @@
             "Knob 7: Release",
             " Amp envelope ADSR",
             "",
-            "Knob 8: Volume"
+            "Knob 8: Volume",
+            " Global volume"
           ]
         },
         {
           "title": "Oscillators",
           "lines": [
-            "3 independent",
-            "oscillators, each",
-            "with selectable type.",
+            "Osc 1 & 2 have:",
+            " Waveform, Volume,",
+            " Transpose, Tune,",
+            " Unison Voices, and",
+            " Unison Detune.",
             "",
-            "Types include:",
-            " Classic (analog)",
-            " Wavetable",
-            " FM (2/3 operator)",
-            " String (Karplus)",
-            " Twist (MI Plaits)",
-            " Alias (lo-fi)",
-            " S&H Noise",
+            "Sub Osc has:",
+            " Waveform, Volume,",
+            " Octave, Shuffle.",
             "",
-            "Each has pitch,",
-            "type-specific params,",
-            "and 6 shape controls."
+            "Noise/Feedback:",
+            " Noise level and",
+            " feedback controls."
           ]
         },
         {
-          "title": "Mixer",
+          "title": "Filter",
           "lines": [
-            "Combines oscillator",
-            "outputs before",
-            "filters.",
-            "",
-            "Osc 1/2/3 levels,",
-            "noise level, and",
-            "ring mod.",
-            "",
-            "7 mixer parameters",
-            "total."
-          ]
-        },
-        {
-          "title": "Filters",
-          "lines": [
-            "2 filters with many",
-            "types available.",
-            "",
-            "Each filter has:",
-            " Cutoff frequency",
-            " Resonance",
-            " Envelope modulation",
-            " Keytrack amount",
-            " Subtype selection",
-            "",
-            "Filter routing is",
-            "configurable in the",
-            "scene settings."
+            "Multi-mode filter",
+            "with controls for:",
+            " On/Off, Style,",
+            " Blend, Shelf,",
+            " Cutoff, Resonance,",
+            " Keytrack, and",
+            " Drive."
           ]
         },
         {
           "title": "Envelopes",
           "lines": [
-            "Amp Envelope:",
-            " Attack, Hold, Decay",
-            " Sustain, Release",
-            " Shape, Mode",
+            "3 ADSR Envelopes:",
+            " Amp Envelope",
+            " Filter Envelope",
+            " Mod Envelope",
             "",
-            "Filter Envelope:",
-            " Same parameters,",
-            " modulates filter",
-            " cutoff frequency.",
-            "",
-            "Both support",
-            "digital and analog",
-            "envelope modes."
+            "Adjust Attack,",
+            "Decay, Sustain,",
+            "and Release for",
+            "each envelope."
           ]
         },
         {
           "title": "LFOs",
           "lines": [
-            "3 LFOs available.",
+            "3 LFOs available:",
+            " Mono LFO 1 & 2",
+            " Poly LFO",
             "",
-            "Each LFO has:",
-            " Rate (free or sync)",
-            " Shape, Phase",
-            " Amplitude, Deform",
-            " Delay, Fade-in",
-            "",
-            "12 parameters per",
-            "LFO for deep",
-            "modulation control."
+            "Each has Waveform,",
+            "Sync (Free/Tempo),",
+            "Tempo Division,",
+            "Frequency,",
+            "Amplitude, and",
+            "Retrigger mode."
           ]
         },
         {
-          "title": "Scene Settings",
+          "title": "Sequencer",
           "lines": [
-            "Global voice and",
-            "routing controls.",
+            "Step Sequencer",
+            "with up to 32 steps.",
             "",
-            "Polyphony, portamento",
-            "pitch bend range,",
-            "octave offset, and",
-            "filter routing.",
+            "Adjust Num Steps,",
+            "Frequency, Sync,",
+            "Tempo, Smoothing,",
+            "and Retrigger.",
             "",
-            "19 scene parameters",
-            "available."
+            "Edit individual",
+            "steps directly",
+            "via mapped knobs."
+          ]
+        },
+        {
+          "title": "Mod Matrix",
+          "lines": [
+            "16 modulation",
+            "routing slots.",
+            "",
+            "Configure:",
+            " - Slot Enabled",
+            " - Source selector",
+            " - Destination (70",
+            "   targets)",
+            " - Mod Amount",
+            "   (-100% to +100%)"
+          ]
+        },
+        {
+          "title": "Effects",
+          "lines": [
+            "5 built-in effects:",
+            " Formant (vocal)",
+            " Distortion (drive)",
+            " Delay (echo)",
+            " Reverb (space)",
+            " Stutter (looper)",
+            "",
+            "Enable and tweak",
+            "each effect in its",
+            "respective menu."
           ]
         }
       ]
     },
     {
-      "title": "MIDI",
+      "title": "Settings",
       "lines": [
-        "Full polyphony with",
-        "voice management.",
-        "",
-        "Pitch Bend:",
-        " 14-bit resolution",
-        "",
-        "Aftertouch:",
-        " Channel and poly",
-        "",
-        "Program Change:",
-        " Selects presets",
-        "",
-        "Full CC support",
-        "for all parameters.",
-        "",
-        "Octave transpose:",
-        " -3 to +3 octaves"
-      ]
-    },
-    {
-      "title": "MPE Setup",
-      "lines": [
-        "For MPE controllers",
-        "(LinnStrument, Roli,",
-        "Sensel, etc):",
-        "",
-        "1. Set Receive Ch",
-        "   to ALL",
-        "2. Set Forward Ch",
-        "   to THRU",
-        "3. Enable MPE in",
-        "   Surge settings",
-        "",
-        "Receive=ALL lets all",
-        "MPE channels through.",
-        "Forward=THRU keeps",
-        "per-note channel data",
-        "intact.",
-        "",
-        "MPE presets are in",
-        "the factory library",
-        "under MPE and in",
-        "Third Party >",
-        "LinnStrument MPE.",
-        "",
-        "These presets have",
-        "pressure, slide, and",
-        "timbre already routed",
-        "to synth parameters."
+        "Global parameters:",
+        " BPM (20 to 300)",
+        " Volume",
+        " Polyphony",
+        " Portamento",
+        " Portamento Type",
+        " Legato mode",
+        " Pitch Bend Range",
+        " Velocity Track"
       ]
     }
   ]
