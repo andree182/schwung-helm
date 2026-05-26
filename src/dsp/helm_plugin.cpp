@@ -77,7 +77,6 @@ public:
 
   using SynthBase::getConnection;
 
-
   const juce::CriticalSection &getCriticalSection() override { return lock_; }
   SynthGuiInterface *getGuiInterface() override { return nullptr; }
 
@@ -166,20 +165,10 @@ typedef struct helm_instance_t {
 } helm_instance_t;
 
 static const char *MOD_SOURCES[] = {
-  "none",
-  "mono_lfo_1",
-  "mono_lfo_2",
-  "poly_lfo",
-  "step_sequencer",
-  "mod_envelope",
-  "fil_envelope",
-  "amp_envelope",
-  "pitch_wheel",
-  "mod_wheel",
-  "aftertouch",
-  "velocity",
-  "note",
-  "random"
+  "none",           "mono_lfo_1",   "mono_lfo_2",   "poly_lfo",
+  "step_sequencer", "mod_envelope", "fil_envelope", "amp_envelope",
+  "pitch_wheel",    "mod_wheel",    "aftertouch",   "velocity",
+  "note",           "random"
 };
 
 static const char *MOD_DESTINATIONS[] = {
@@ -255,20 +244,24 @@ static const char *MOD_DESTINATIONS[] = {
   "portamento"
 };
 
-static const int NUM_MOD_DESTINATIONS = sizeof(MOD_DESTINATIONS) / sizeof(MOD_DESTINATIONS[0]);
+static const int NUM_MOD_DESTINATIONS =
+    sizeof(MOD_DESTINATIONS) / sizeof(MOD_DESTINATIONS[0]);
 
 static int get_source_idx(const std::string &source) {
   for (int i = 0; i < 14; i++) {
-    if (source == MOD_SOURCES[i]) return i;
+    if (source == MOD_SOURCES[i])
+      return i;
   }
   return 0;
 }
 
 static int get_dest_idx(const std::string &dest) {
   std::string target = dest;
-  if (target == "beats_per_minute") target = "bpm";
+  if (target == "beats_per_minute")
+    target = "bpm";
   for (int i = 0; i < NUM_MOD_DESTINATIONS; i++) {
-    if (target == MOD_DESTINATIONS[i]) return i;
+    if (target == MOD_DESTINATIONS[i])
+      return i;
   }
   return 0;
 }
@@ -276,7 +269,8 @@ static int get_dest_idx(const std::string &dest) {
 static std::string get_destinations_options_json() {
   std::string result = "[";
   for (int i = 0; i < NUM_MOD_DESTINATIONS; i++) {
-    if (i > 0) result += ",";
+    if (i > 0)
+      result += ",";
     result += "\"";
     result += MOD_DESTINATIONS[i];
     result += "\"";
@@ -297,9 +291,12 @@ static void sync_mod_slots_from_synth(helm_instance_t *inst) {
     return;
 
   int slot_idx = 0;
-  for (mopo::ModulationConnection *conn : inst->synth->getModulationConnections()) {
-    if (slot_idx >= 16) break;
-    if (!conn) continue;
+  for (mopo::ModulationConnection *conn :
+       inst->synth->getModulationConnections()) {
+    if (slot_idx >= 16)
+      break;
+    if (!conn)
+      continue;
 
     inst->mod_slots[slot_idx].enabled = true;
     inst->mod_slots[slot_idx].source_idx = get_source_idx(conn->source);
@@ -315,16 +312,19 @@ static void apply_slot_to_synth(helm_instance_t *inst, int i) {
     return;
 
   auto &slot = inst->mod_slots[i];
-  
+
   bool should_disconnect = false;
   if (slot.active_conn) {
-    if (!slot.enabled || slot.source_idx == 0 || slot.dest_idx == 0 || slot.amount == 0.0f) {
+    if (!slot.enabled || slot.source_idx == 0 || slot.dest_idx == 0 ||
+        slot.amount == 0.0f) {
       should_disconnect = true;
     } else {
       std::string current_source = MOD_SOURCES[slot.source_idx];
       std::string current_dest = MOD_DESTINATIONS[slot.dest_idx];
-      if (current_dest == "bpm") current_dest = "beats_per_minute";
-      if (slot.active_conn->source != current_source || slot.active_conn->destination != current_dest) {
+      if (current_dest == "bpm")
+        current_dest = "beats_per_minute";
+      if (slot.active_conn->source != current_source ||
+          slot.active_conn->destination != current_dest) {
         should_disconnect = true;
       }
     }
@@ -335,15 +335,18 @@ static void apply_slot_to_synth(helm_instance_t *inst, int i) {
     slot.active_conn = nullptr;
   }
 
-  if (slot.enabled && slot.source_idx > 0 && slot.dest_idx > 0 && slot.amount != 0.0f) {
+  if (slot.enabled && slot.source_idx > 0 && slot.dest_idx > 0 &&
+      slot.amount != 0.0f) {
     std::string new_source = MOD_SOURCES[slot.source_idx];
     std::string new_dest = MOD_DESTINATIONS[slot.dest_idx];
-    if (new_dest == "bpm") new_dest = "beats_per_minute";
+    if (new_dest == "bpm")
+      new_dest = "beats_per_minute";
 
     if (!slot.active_conn) {
       slot.active_conn = inst->synth->getConnection(new_source, new_dest);
       if (!slot.active_conn) {
-        slot.active_conn = inst->synth->getModulationBank().get(new_source, new_dest);
+        slot.active_conn =
+            inst->synth->getModulationBank().get(new_source, new_dest);
       }
     }
 
@@ -352,7 +355,6 @@ static void apply_slot_to_synth(helm_instance_t *inst, int i) {
     }
   }
 }
-
 
 /* =====================================================================
  * Preset loading
@@ -378,148 +380,163 @@ static void load_preset_by_index(helm_instance_t *inst, int idx) {
  * JSON builders for ui_hierarchy and chain_params
  * ===================================================================== */
 static void build_ui_hierarchy(helm_instance_t *inst) {
-  std::string json = "{"
-                     "\"modes\":null,"
-                     "\"levels\":{"
-                     "\"root\":{"
-                     "\"list_param\":\"preset\","
-                     "\"count_param\":\"preset_count\","
-                     "\"name_param\":\"preset_name\","
-                     "\"children\":\"main\","
-                     "\"knobs\":[\"cutoff\",\"resonance\",\"fil_env_depth\",\"amp_attack\",\"amp_decay\",\"amp_sustain\",\"amp_release\",\"volume\"],"
-                     "\"params\":["
-                     "{\"level\":\"category_jump\",\"label\":\"Jump to Category\"}"
-                     "]"
-                     "},"
-                     "\"main\":{"
-                     "\"children\":null,"
-                     "\"knobs\":[\"cutoff\",\"resonance\",\"fil_env_depth\",\"amp_attack\",\"amp_decay\",\"amp_sustain\",\"amp_release\",\"volume\"],"
-                     "\"params\":["
-                     "{\"level\":\"category_jump\",\"label\":\"Jump to Category\"},"
-                     "{\"level\":\"osc1\",\"label\":\"Oscillator 1\"},"
-                     "{\"level\":\"osc2\",\"label\":\"Oscillator 2\"},"
-                     "{\"level\":\"sub_osc\",\"label\":\"Sub Oscillator\"},"
-                     "{\"level\":\"noise_feedback\",\"label\":\"Noise / Feedback\"},"
-                     "{\"level\":\"filter\",\"label\":\"Filter\"},"
-                     "{\"level\":\"amp_env\",\"label\":\"Amp Envelope\"},"
-                     "{\"level\":\"filter_env\",\"label\":\"Filter Envelope\"},"
-                     "{\"level\":\"mod_env\",\"label\":\"Mod Envelope\"},"
-                     "{\"level\":\"mono_lfo_1\",\"label\":\"Mono LFO 1\"},"
-                     "{\"level\":\"mono_lfo_2\",\"label\":\"Mono LFO 2\"},"
-                     "{\"level\":\"poly_lfo\",\"label\":\"Poly LFO\"},"
-                     "{\"level\":\"step_sequencer\",\"label\":\"Step Sequencer\"},"
-                     "{\"level\":\"formant\",\"label\":\"Formant\"},"
-                     "{\"level\":\"distortion\",\"label\":\"Distortion\"},"
-                     "{\"level\":\"delay\",\"label\":\"Delay\"},"
-                     "{\"level\":\"reverb\",\"label\":\"Reverb\"},"
-                     "{\"level\":\"stutter\",\"label\":\"Stutter\"},"
-                     "{\"level\":\"modulations\",\"label\":\"Modulations\"},"
-                     "{\"level\":\"settings\",\"label\":\"Settings\"}"
-                     "]"
-                     "},"
-                     "\"category_jump\":{"
-                     "\"label\":\"Jump to Category\","
-                     "\"items_param\":\"category_list\","
-                     "\"select_param\":\"jump_to_category\","
-                     "\"navigate_to\":\"root\","
-                     "\"children\":null,"
-                     "\"knobs\":[],"
-                     "\"params\":[]"
-                     "},"
-                     "\"osc1\":{"
-                     "\"children\":null,"
-                     "\"knobs\":[\"osc_1_waveform\",\"osc_1_volume\",\"osc_1_transpose\",\"osc_1_tune\",\"osc_1_unison_voices\",\"osc_1_unison_detune\",\"unison_1_harmonize\"],"
-                     "\"params\":[\"osc_1_waveform\",\"osc_1_volume\",\"osc_1_transpose\",\"osc_1_tune\",\"osc_1_unison_voices\",\"osc_1_unison_detune\",\"unison_1_harmonize\"]"
-                     "},"
-                     "\"osc2\":{"
-                     "\"children\":null,"
-                     "\"knobs\":[\"osc_2_waveform\",\"osc_2_volume\",\"osc_2_transpose\",\"osc_2_tune\",\"osc_2_unison_voices\",\"osc_2_unison_detune\",\"unison_2_harmonize\"],"
-                     "\"params\":[\"osc_2_waveform\",\"osc_2_volume\",\"osc_2_transpose\",\"osc_2_tune\",\"osc_2_unison_voices\",\"osc_2_unison_detune\",\"unison_2_harmonize\"]"
-                     "},"
-                     "\"sub_osc\":{"
-                     "\"children\":null,"
-                     "\"knobs\":[\"sub_waveform\",\"sub_volume\",\"sub_octave\",\"sub_shuffle\"],"
-                     "\"params\":[\"sub_waveform\",\"sub_volume\",\"sub_octave\",\"sub_shuffle\"]"
-                     "},"
-                     "\"noise_feedback\":{"
-                     "\"children\":null,"
-                     "\"knobs\":[\"noise_volume\",\"osc_feedback_amount\",\"osc_feedback_transpose\",\"osc_feedback_tune\"],"
-                     "\"params\":[\"noise_volume\",\"osc_feedback_amount\",\"osc_feedback_transpose\",\"osc_feedback_tune\"]"
-                     "},"
-                     "\"filter\":{"
-                     "\"children\":null,"
-                     "\"knobs\":[\"filter_on\",\"filter_style\",\"filter_blend\",\"filter_shelf\",\"cutoff\",\"resonance\",\"keytrack\",\"filter_drive\"],"
-                     "\"params\":[\"filter_on\",\"filter_style\",\"filter_blend\",\"filter_shelf\",\"cutoff\",\"resonance\",\"keytrack\",\"filter_drive\"]"
-                     "},"
-                     "\"amp_env\":{"
-                     "\"children\":null,"
-                     "\"knobs\":[\"amp_attack\",\"amp_decay\",\"amp_sustain\",\"amp_release\"],"
-                     "\"params\":[\"amp_attack\",\"amp_decay\",\"amp_sustain\",\"amp_release\"]"
-                     "},"
-                     "\"filter_env\":{"
-                     "\"children\":null,"
-                     "\"knobs\":[\"fil_attack\",\"fil_decay\",\"fil_sustain\",\"fil_release\",\"fil_env_depth\"],"
-                     "\"params\":[\"fil_attack\",\"fil_decay\",\"fil_sustain\",\"fil_release\",\"fil_env_depth\"]"
-                     "},"
-                     "\"mod_env\":{"
-                     "\"children\":null,"
-                     "\"knobs\":[\"mod_attack\",\"mod_decay\",\"mod_sustain\",\"mod_release\"],"
-                     "\"params\":[\"mod_attack\",\"mod_decay\",\"mod_sustain\",\"mod_release\"]"
-                     "},"
-                     "\"mono_lfo_1\":{"
-                     "\"children\":null,"
-                     "\"knobs\":[\"mono_lfo_1_waveform\",\"mono_lfo_1_amplitude\",\"mono_lfo_1_frequency\",\"mono_lfo_1_sync\",\"mono_lfo_1_tempo\",\"mono_lfo_1_retrigger\"],"
-                     "\"params\":[\"mono_lfo_1_waveform\",\"mono_lfo_1_amplitude\",\"mono_lfo_1_frequency\",\"mono_lfo_1_sync\",\"mono_lfo_1_tempo\",\"mono_lfo_1_retrigger\"]"
-                     "},"
-                     "\"mono_lfo_2\":{"
-                     "\"children\":null,"
-                     "\"knobs\":[\"mono_lfo_2_waveform\",\"mono_lfo_2_amplitude\",\"mono_lfo_2_frequency\",\"mono_lfo_2_sync\",\"mono_lfo_2_tempo\",\"mono_lfo_2_retrigger\"],"
-                     "\"params\":[\"mono_lfo_2_waveform\",\"mono_lfo_2_amplitude\",\"mono_lfo_2_frequency\",\"mono_lfo_2_sync\",\"mono_lfo_2_tempo\",\"mono_lfo_2_retrigger\"]"
-                     "},"
-                     "\"poly_lfo\":{"
-                     "\"children\":null,"
-                     "\"knobs\":[\"poly_lfo_waveform\",\"poly_lfo_amplitude\",\"poly_lfo_frequency\",\"poly_lfo_sync\",\"poly_lfo_tempo\"],"
-                     "\"params\":[\"poly_lfo_waveform\",\"poly_lfo_amplitude\",\"poly_lfo_frequency\",\"poly_lfo_sync\",\"poly_lfo_tempo\"]"
-                     "},"
-                     "\"step_sequencer\":{"
-                     "\"children\":null,"
-                     "\"knobs\":[\"num_steps\",\"step_frequency\",\"step_sequencer_retrigger\",\"step_sequencer_sync\",\"step_sequencer_tempo\",\"step_smoothing\"],"
-                     "\"params\":[\"num_steps\",\"step_frequency\",\"step_sequencer_retrigger\",\"step_sequencer_sync\",\"step_sequencer_tempo\",\"step_smoothing\","
-                     // TODO: this doesn't work, floats are not shown/editable
-                     "\"step_seq_00\",\"step_seq_01\",\"step_seq_02\",\"step_seq_03\",\"step_seq_04\",\"step_seq_05\",\"step_seq_06\",\"step_seq_07\","
-                     "\"step_seq_08\",\"step_seq_09\",\"step_seq_10\",\"step_seq_11\",\"step_seq_12\",\"step_seq_13\",\"step_seq_14\",\"step_seq_15\","
-                     "\"step_seq_16\",\"step_seq_17\",\"step_seq_18\",\"step_seq_19\",\"step_seq_20\",\"step_seq_21\",\"step_seq_22\",\"step_seq_23\","
-                     "\"step_seq_24\",\"step_seq_25\",\"step_seq_26\",\"step_seq_27\",\"step_seq_28\",\"step_seq_29\",\"step_seq_30\",\"step_seq_31\"]"
-                     "},"
-                     "\"formant\":{"
-                     "\"children\":null,"
-                     "\"knobs\":[\"formant_on\",\"formant_x\",\"formant_y\"],"
-                     "\"params\":[\"formant_on\",\"formant_x\",\"formant_y\"]"
-                     "},"
-                     "\"distortion\":{"
-                     "\"children\":null,"
-                     "\"knobs\":[\"distortion_on\",\"distortion_type\",\"distortion_drive\",\"distortion_mix\"],"
-                     "\"params\":[\"distortion_on\",\"distortion_type\",\"distortion_drive\",\"distortion_mix\"]"
-                     "},"
-                     "\"delay\":{"
-                     "\"children\":null,"
-                     "\"knobs\":[\"delay_on\",\"delay_dry_wet\",\"delay_feedback\",\"delay_frequency\",\"delay_sync\",\"delay_tempo\"],"
-                     "\"params\":[\"delay_on\",\"delay_dry_wet\",\"delay_feedback\",\"delay_frequency\",\"delay_sync\",\"delay_tempo\"]"
-                     "},"
-                     "\"reverb\":{"
-                     "\"children\":null,"
-                     "\"knobs\":[\"reverb_on\",\"reverb_dry_wet\",\"reverb_feedback\",\"reverb_damping\"],"
-                     "\"params\":[\"reverb_on\",\"reverb_dry_wet\",\"reverb_feedback\",\"reverb_damping\"]"
-                     "},"
-                     "\"stutter\":{"
-                     "\"children\":null,"
-                     "\"knobs\":[\"stutter_on\",\"stutter_frequency\",\"stutter_sync\",\"stutter_tempo\",\"stutter_softness\",\"stutter_resample_frequency\",\"stutter_resample_sync\",\"stutter_resample_tempo\"],"
-                     "\"params\":[\"stutter_on\",\"stutter_frequency\",\"stutter_sync\",\"stutter_tempo\",\"stutter_softness\",\"stutter_resample_frequency\",\"stutter_resample_sync\",\"stutter_resample_tempo\"]"
-                     "},"
-                     "\"modulations\":{"
-                     "\"children\":null,"
-                     "\"knobs\":[],"
-                     "\"params\":[";
+  std::string json =
+      "{"
+        "\"modes\":null,"
+        "\"levels\":{"
+        "\"root\":{"
+        "\"list_param\":\"preset\","
+        "\"count_param\":\"preset_count\","
+        "\"name_param\":\"preset_name\","
+        "\"children\":\"main\","
+        "\"knobs\":[\"cutoff\",\"resonance\",\"fil_env_depth\",\"amp_attack\","
+        "\"amp_decay\",\"amp_sustain\",\"amp_release\",\"volume\"],"
+        "\"params\":["
+        "{\"level\":\"category_jump\",\"label\":\"Jump to Category\"}"
+        "]"
+      "},"
+      "\"main\":{"
+        "\"children\":null,"
+        "\"knobs\":[\"cutoff\",\"resonance\",\"fil_env_depth\",\"amp_attack\","
+        "\"amp_decay\",\"amp_sustain\",\"amp_release\",\"volume\"],"
+        "\"params\":["
+          "{\"level\":\"category_jump\",\"label\":\"Jump to Category\"},"
+          "{\"level\":\"osc1\",\"label\":\"Oscillator 1\"},"
+          "{\"level\":\"osc2\",\"label\":\"Oscillator 2\"},"
+          "{\"level\":\"sub_osc\",\"label\":\"Sub Oscillator\"},"
+          "{\"level\":\"noise_feedback\",\"label\":\"Noise / Feedback\"},"
+          "{\"level\":\"filter\",\"label\":\"Filter\"},"
+          "{\"level\":\"amp_env\",\"label\":\"Amp Envelope\"},"
+          "{\"level\":\"filter_env\",\"label\":\"Filter Envelope\"},"
+          "{\"level\":\"mod_env\",\"label\":\"Mod Envelope\"},"
+          "{\"level\":\"mono_lfo_1\",\"label\":\"Mono LFO 1\"},"
+          "{\"level\":\"mono_lfo_2\",\"label\":\"Mono LFO 2\"},"
+          "{\"level\":\"poly_lfo\",\"label\":\"Poly LFO\"},"
+          "{\"level\":\"step_sequencer\",\"label\":\"Step Sequencer\"},"
+          "{\"level\":\"formant\",\"label\":\"Formant\"},"
+          "{\"level\":\"distortion\",\"label\":\"Distortion\"},"
+          "{\"level\":\"delay\",\"label\":\"Delay\"},"
+          "{\"level\":\"reverb\",\"label\":\"Reverb\"},"
+          "{\"level\":\"stutter\",\"label\":\"Stutter\"},"
+          "{\"level\":\"modulations\",\"label\":\"Modulations\"},"
+          "{\"level\":\"settings\",\"label\":\"Settings\"}"
+        "]"
+      "},"
+      "\"category_jump\":{"
+        "\"label\":\"Jump to Category\","
+        "\"items_param\":\"category_list\","
+        "\"select_param\":\"jump_to_category\","
+        "\"navigate_to\":\"root\","
+        "\"children\":null,"
+        "\"knobs\":[],"
+        "\"params\":[]"
+      "},"
+      "\"osc1\":{"
+        "\"children\":null,"
+        "\"knobs\":[\"osc_1_waveform\",\"osc_1_volume\",\"osc_1_transpose\","
+          "\"osc_1_tune\",\"osc_1_unison_voices\",\"osc_1_unison_detune\",\"unison_1_harmonize\"],"
+        "\"params\":[\"osc_1_waveform\",\"osc_1_volume\",\"osc_1_transpose\","
+          "\"osc_1_tune\",\"osc_1_unison_voices\",\"osc_1_unison_detune\",\"unison_1_harmonize\"]"
+      "},"
+      "\"osc2\":{"
+        "\"children\":null,"
+        "\"knobs\":[\"osc_2_waveform\",\"osc_2_volume\",\"osc_2_transpose\","
+          "\"osc_2_tune\",\"osc_2_unison_voices\",\"osc_2_unison_detune\",\"unison_2_harmonize\"],"
+        "\"params\":[\"osc_2_waveform\",\"osc_2_volume\",\"osc_2_transpose\","
+          "\"osc_2_tune\",\"osc_2_unison_voices\",\"osc_2_unison_detune\",\"unison_2_harmonize\"]"
+      "},"
+      "\"sub_osc\":{"
+        "\"children\":null,"
+        "\"knobs\":[\"sub_waveform\",\"sub_volume\",\"sub_octave\",\"sub_shuffle\"],"
+        "\"params\":[\"sub_waveform\",\"sub_volume\",\"sub_octave\",\"sub_shuffle\"]"
+      "},"
+      "\"noise_feedback\":{"
+        "\"children\":null,"
+        "\"knobs\":[\"noise_volume\",\"osc_feedback_amount\",\"osc_feedback_transpose\",\"osc_feedback_tune\"],"
+        "\"params\":[\"noise_volume\",\"osc_feedback_amount\",\"osc_feedback_transpose\",\"osc_feedback_tune\"]"
+      "},"
+      "\"filter\":{"
+        "\"children\":null,"
+        "\"knobs\":[\"filter_on\",\"filter_style\",\"filter_blend\",\"filter_shelf\",\"cutoff\",\"resonance\",\"keytrack\",\"filter_drive\"],"
+        "\"params\":[\"filter_on\",\"filter_style\",\"filter_blend\",\"filter_shelf\",\"cutoff\",\"resonance\",\"keytrack\",\"filter_drive\"]"
+        "},"
+      "\"amp_env\":{"
+        "\"children\":null,"
+        "\"knobs\":[\"amp_attack\",\"amp_decay\",\"amp_sustain\",\"amp_release\"],"
+        "\"params\":[\"amp_attack\",\"amp_decay\",\"amp_sustain\",\"amp_release\"]"
+      "},"
+      "\"filter_env\":{"
+        "\"children\":null,"
+        "\"knobs\":[\"fil_attack\",\"fil_decay\",\"fil_sustain\",\"fil_release\",\"fil_env_depth\"],"
+        "\"params\":[\"fil_attack\",\"fil_decay\",\"fil_sustain\",\"fil_release\",\"fil_env_depth\"]"
+      "},"
+      "\"mod_env\":{"
+        "\"children\":null,"
+        "\"knobs\":[\"mod_attack\",\"mod_decay\",\"mod_sustain\",\"mod_release\"],"
+        "\"params\":[\"mod_attack\",\"mod_decay\",\"mod_sustain\",\"mod_release\"]"
+      "},"
+      "\"mono_lfo_1\":{"
+        "\"children\":null,"
+        "\"knobs\":[\"mono_lfo_1_waveform\",\"mono_lfo_1_amplitude\",\"mono_lfo_1_frequency\",\"mono_lfo_1_sync\",\"mono_lfo_1_tempo\",\"mono_lfo_1_retrigger\"],"
+        "\"params\":[\"mono_lfo_1_waveform\",\"mono_lfo_1_amplitude\",\"mono_lfo_1_frequency\",\"mono_lfo_1_sync\",\"mono_lfo_1_tempo\",\"mono_lfo_1_retrigger\"]"
+      "},"
+      "\"mono_lfo_2\":{"
+        "\"children\":null,"
+        "\"knobs\":[\"mono_lfo_2_waveform\",\"mono_lfo_2_amplitude\",\"mono_lfo_2_frequency\",\"mono_lfo_2_sync\",\"mono_lfo_2_tempo\",\"mono_lfo_2_retrigger\"],"
+        "\"params\":[\"mono_lfo_2_waveform\",\"mono_lfo_2_amplitude\",\"mono_lfo_2_frequency\",\"mono_lfo_2_sync\",\"mono_lfo_2_tempo\",\"mono_lfo_2_retrigger\"]"
+      "},"
+      "\"poly_lfo\":{"
+        "\"children\":null,"
+        "\"knobs\":[\"poly_lfo_waveform\",\"poly_lfo_amplitude\",\"poly_lfo_frequency\",\"poly_lfo_sync\",\"poly_lfo_tempo\"],"
+        "\"params\":[\"poly_lfo_waveform\",\"poly_lfo_amplitude\",\"poly_lfo_frequency\",\"poly_lfo_sync\",\"poly_lfo_tempo\"]"
+      "},"
+      "\"step_sequencer\":{"
+        "\"children\":null,"
+        "\"knobs\":[\"num_steps\",\"step_frequency\",\"step_sequencer_retrigger\",\"step_sequencer_sync\",\"step_sequencer_tempo\",\"step_smoothing\"],"
+        "\"params\":[\"num_steps\",\"step_frequency\",\"step_sequencer_retrigger\",\"step_sequencer_sync\",\"step_sequencer_tempo\",\"step_smoothing\","
+          // TODO: this doesn't work, floats are not shown/editable
+          "\"step_seq_00\",\"step_seq_01\",\"step_seq_02\",\"step_seq_03\","
+          "\"step_seq_04\",\"step_seq_05\",\"step_seq_06\",\"step_seq_07\","
+          "\"step_seq_08\",\"step_seq_09\",\"step_seq_10\",\"step_seq_11\","
+          "\"step_seq_12\",\"step_seq_13\",\"step_seq_14\",\"step_seq_15\","
+          "\"step_seq_16\",\"step_seq_17\",\"step_seq_18\",\"step_seq_19\","
+          "\"step_seq_20\",\"step_seq_21\",\"step_seq_22\",\"step_seq_23\","
+          "\"step_seq_24\",\"step_seq_25\",\"step_seq_26\",\"step_seq_27\","
+          "\"step_seq_28\",\"step_seq_29\",\"step_seq_30\",\"step_seq_31\"]"
+      "},"
+      "\"formant\":{"
+        "\"children\":null,"
+        "\"knobs\":[\"formant_on\",\"formant_x\",\"formant_y\"],"
+        "\"params\":[\"formant_on\",\"formant_x\",\"formant_y\"]"
+      "},"
+      "\"distortion\":{"
+        "\"children\":null,"
+        "\"knobs\":[\"distortion_on\",\"distortion_type\",\"distortion_drive\",\"distortion_mix\"],"
+        "\"params\":[\"distortion_on\",\"distortion_type\",\"distortion_drive\",\"distortion_mix\"]"
+      "},"
+      "\"delay\":{"
+        "\"children\":null,"
+        "\"knobs\":[\"delay_on\",\"delay_dry_wet\",\"delay_feedback\",\"delay_frequency\",\"delay_sync\",\"delay_tempo\"],"
+        "\"params\":[\"delay_on\",\"delay_dry_wet\",\"delay_feedback\",\"delay_frequency\",\"delay_sync\",\"delay_tempo\"]"
+      "},"
+      "\"reverb\":{"
+        "\"children\":null,"
+        "\"knobs\":[\"reverb_on\",\"reverb_dry_wet\",\"reverb_feedback\",\"reverb_damping\"],"
+        "\"params\":[\"reverb_on\",\"reverb_dry_wet\",\"reverb_feedback\",\"reverb_damping\"]"
+      "},"
+      "\"stutter\":{"
+        "\"children\":null,"
+        "\"knobs\":[\"stutter_on\",\"stutter_frequency\",\"stutter_sync\","
+        "\"stutter_tempo\",\"stutter_softness\",\"stutter_resample_frequency\","
+        "\"stutter_resample_sync\",\"stutter_resample_tempo\"],"
+        "\"params\":[\"stutter_on\",\"stutter_frequency\",\"stutter_sync\","
+        "\"stutter_tempo\",\"stutter_softness\",\"stutter_resample_frequency\","
+        "\"stutter_resample_sync\",\"stutter_resample_tempo\"]"
+      "},"
+      "\"modulations\":{"
+        "\"children\":null,"
+        "\"knobs\":[],"
+        "\"params\":[";
 
   for (int i = 0; i < 16; i++) {
     char buf[128];
@@ -537,97 +554,130 @@ static void build_ui_hierarchy(helm_instance_t *inst) {
     snprintf(buf, sizeof(buf),
              "\"mod_%d\":{"
              "\"children\":null,"
-             "\"knobs\":[\"mod_%d_enable\",\"mod_%d_source\",\"mod_%d_dest\",\"mod_%d_amount\"],"
+             "\"knobs\":[\"mod_%d_enable\",\"mod_%d_source\",\"mod_%d_dest\","
+             "\"mod_%d_amount\"],"
              "\"params\":["
-             "{\"key\":\"mod_%d_enable\",\"name\":\"Enabled\",\"type\":\"enum\",\"options\":[\"Off\",\"On\"]},"
-             "{\"key\":\"mod_%d_source\",\"name\":\"Source\",\"type\":\"enum\",\"options\":[\"none\",\"mono_lfo_1\",\"mono_lfo_2\",\"poly_lfo\",\"step_sequencer\",\"mod_envelope\",\"fil_envelope\",\"amp_envelope\",\"pitch_wheel\",\"mod_wheel\",\"aftertouch\",\"velocity\",\"note\",\"random\"]},"
-             "{\"key\":\"mod_%d_dest\",\"name\":\"Destination\",\"type\":\"enum\",\"options\":%s},"
-             "{\"key\":\"mod_%d_amount\",\"name\":\"Amount\",\"type\":\"float\",\"min\":-1.0,\"max\":1.0}"
+              "{\"key\":\"mod_%d_enable\",\"name\":\"Enabled\",\"type\":"
+                "\"enum\",\"options\":[\"Off\",\"On\"]},"
+              "{\"key\":\"mod_%d_source\",\"name\":\"Source\",\"type\":\"enum\","
+                "\"options\":[\"none\",\"mono_lfo_1\",\"mono_lfo_2\",\"poly_lfo\","
+                "\"step_sequencer\",\"mod_envelope\",\"fil_envelope\",\"amp_"
+                "envelope\",\"pitch_wheel\",\"mod_wheel\",\"aftertouch\","
+                "\"velocity\",\"note\",\"random\"]},"
+              "{\"key\":\"mod_%d_dest\",\"name\":\"Destination\",\"type\":\"enum\",\"options\":%s},"
+              "{\"key\":\"mod_%d_amount\",\"name\":\"Amount\",\"type\":\"float\",\"min\":-1.0,\"max\":1.0}"
              "]"
              "}%s",
              i, i, i, i, i, i, i, i, dest_opts.c_str(), i, (i < 15) ? "," : "");
     json += buf;
   }
 
-  json += ",\"settings\":{"
-          "\"children\":null,"
-          "\"knobs\":[\"bpm\",\"volume\",\"polyphony\",\"portamento\",\"portamento_type\",\"legato\",\"pitch_bend_range\",\"velocity_track\"],"
-          "\"params\":[\"bpm\",\"volume\",\"polyphony\",\"portamento\",\"portamento_type\",\"legato\",\"pitch_bend_range\",\"velocity_track\"]"
-          "}"
-          "}"
-          "}";
+  json +=
+      ",\"settings\":{"
+        "\"children\":null,"
+        "\"knobs\":[\"bpm\",\"volume\",\"polyphony\",\"portamento\",\"portamento_type\",\"legato\",\"pitch_bend_range\",\"velocity_track\"],"
+        "\"params\":[\"bpm\",\"volume\",\"polyphony\",\"portamento\",\"portamento_type\",\"legato\",\"pitch_bend_range\",\"velocity_track\"]"
+      "}"
+    "}"
+  "}";
 
   inst->ui_hierarchy_json = strdup(json.c_str());
 }
 
 static std::string get_param_options_json(const std::string &key) {
-  if (key == "osc_1_waveform" || key == "osc_2_waveform" || key == "sub_waveform") {
-    return "\"type\":\"enum\",\"options\":[\"Sine\",\"Triangle\",\"Square\",\"Saw Down\",\"Saw Up\",\"3 Step\",\"4 Step\",\"8 Step\",\"3 Pyramid\",\"5 Pyramid\",\"9 Pyramid\"]";
+  if (key == "osc_1_waveform" || key == "osc_2_waveform" ||
+      key == "sub_waveform") {
+    return "\"type\":\"enum\",\"options\":[\"Sine\",\"Triangle\",\"Square\","
+           "\"Saw Down\",\"Saw Up\",\"3 Step\",\"4 Step\",\"8 Step\",\"3 "
+           "Pyramid\",\"5 Pyramid\",\"9 Pyramid\"]";
   }
-  if (key == "mono_lfo_1_waveform" || key == "mono_lfo_2_waveform" || key == "poly_lfo_waveform") {
-    return "\"type\":\"enum\",\"options\":[\"Sine\",\"Triangle\",\"Square\",\"Saw Up\",\"Saw Down\",\"3 Step\",\"4 Step\",\"8 Step\",\"3 Pyramid\",\"5 Pyramid\",\"9 Pyramid\",\"Sample & Hold\",\"Sample & Glide\"]";
+  if (key == "mono_lfo_1_waveform" || key == "mono_lfo_2_waveform" ||
+      key == "poly_lfo_waveform") {
+    return "\"type\":\"enum\",\"options\":[\"Sine\",\"Triangle\",\"Square\","
+           "\"Saw Up\",\"Saw Down\",\"3 Step\",\"4 Step\",\"8 Step\",\"3 "
+           "Pyramid\",\"5 Pyramid\",\"9 Pyramid\",\"Sample & Hold\",\"Sample & "
+           "Glide\"]";
   }
-  if (key == "mono_lfo_1_sync" || key == "mono_lfo_2_sync" || key == "poly_lfo_sync" ||
-      key == "step_sequencer_sync" || key == "delay_sync" || key == "stutter_sync" ||
+  if (key == "mono_lfo_1_sync" || key == "mono_lfo_2_sync" ||
+      key == "poly_lfo_sync" || key == "step_sequencer_sync" ||
+      key == "delay_sync" || key == "stutter_sync" ||
       key == "stutter_resample_sync" || key == "arp_sync") {
-    return "\"type\":\"enum\",\"options\":[\"Seconds\",\"Tempo\",\"Tempo Dotted\",\"Tempo Triplets\"]";
+    return "\"type\":\"enum\",\"options\":[\"Seconds\",\"Tempo\",\"Tempo "
+           "Dotted\",\"Tempo Triplets\"]";
   }
-  if (key == "mono_lfo_1_retrigger" || key == "mono_lfo_2_retrigger" || key == "step_sequencer_retrigger") {
-    return "\"type\":\"enum\",\"options\":[\"Free\",\"Retrigger\",\"Sync to Playhead\"]";
+  if (key == "mono_lfo_1_retrigger" || key == "mono_lfo_2_retrigger" ||
+      key == "step_sequencer_retrigger") {
+    return "\"type\":\"enum\",\"options\":[\"Free\",\"Retrigger\",\"Sync to "
+           "Playhead\"]";
   }
-  if (key == "mono_lfo_1_tempo" || key == "mono_lfo_2_tempo" || key == "poly_lfo_tempo" ||
-      key == "step_sequencer_tempo" || key == "delay_tempo" || key == "stutter_tempo" ||
+  if (key == "mono_lfo_1_tempo" || key == "mono_lfo_2_tempo" ||
+      key == "poly_lfo_tempo" || key == "step_sequencer_tempo" ||
+      key == "delay_tempo" || key == "stutter_tempo" ||
       key == "stutter_resample_tempo" || key == "arp_tempo") {
-    return "\"type\":\"enum\",\"options\":[\"32/1\",\"16/1\",\"8/1\",\"4/1\",\"2/1\",\"1/1\",\"1/2\",\"1/4\",\"1/8\",\"1/16\",\"1/32\",\"1/64\"]";
+    return "\"type\":\"enum\",\"options\":[\"32/1\",\"16/1\",\"8/1\",\"4/"
+           "1\",\"2/1\",\"1/1\",\"1/2\",\"1/4\",\"1/8\",\"1/16\",\"1/32\",\"1/"
+           "64\"]";
   }
   if (key == "portamento_type") {
     return "\"type\":\"enum\",\"options\":[\"Off\",\"Auto\",\"On\"]";
   }
-  if (key == "legato" || key == "distortion_on" || key == "delay_on" || key == "reverb_on" ||
-      key == "stutter_on" || key == "filter_on" || key == "formant_on" || key == "arp_on" ||
-      key == "unison_1_harmonize" || key == "unison_2_harmonize") {
+  if (key == "legato" || key == "distortion_on" || key == "delay_on" ||
+      key == "reverb_on" || key == "stutter_on" || key == "filter_on" ||
+      key == "formant_on" || key == "arp_on" || key == "unison_1_harmonize" ||
+      key == "unison_2_harmonize") {
     return "\"type\":\"enum\",\"options\":[\"Off\",\"On\"]";
   }
   if (key == "filter_style") {
     return "\"type\":\"enum\",\"options\":[\"12dB\",\"24dB\",\"Shelf\"]";
   }
   if (key == "filter_shelf") {
-    return "\"type\":\"enum\",\"options\":[\"Low Shelf\",\"Band Shelf\",\"High Shelf\"]";
+    return "\"type\":\"enum\",\"options\":[\"Low Shelf\",\"Band Shelf\",\"High "
+           "Shelf\"]";
   }
   if (key == "distortion_type") {
-    return "\"type\":\"enum\",\"options\":[\"Soft Clip\",\"Hard Clip\",\"Linear Fold\",\"Sine Fold\"]";
+    return "\"type\":\"enum\",\"options\":[\"Soft Clip\",\"Hard "
+           "Clip\",\"Linear Fold\",\"Sine Fold\"]";
   }
   if (key == "arp_pattern") {
-    return "\"type\":\"enum\",\"options\":[\"Up\",\"Down\",\"Up-Down\",\"As Played\",\"Random\"]";
+    return "\"type\":\"enum\",\"options\":[\"Up\",\"Down\",\"Up-Down\",\"As "
+           "Played\",\"Random\"]";
   }
   return "";
 }
 
 static void build_chain_params(helm_instance_t *inst) {
   std::string json = "[";
-  json += "{\"key\":\"preset\",\"name\":\"Preset\",\"type\":\"int\",\"min\":0,\"max\":9999}";
-  json += ",{\"key\":\"octave_transpose\",\"name\":\"Octave\",\"type\":\"int\",\"min\":-3,\"max\":3}";
-  json += ",{\"key\":\"bpm\",\"name\":\"BPM\",\"type\":\"int\",\"min\":20,\"max\":300}";
+  json += "{\"key\":\"preset\",\"name\":\"Preset\",\"type\":\"int\",\"min\":0,"
+          "\"max\":9999}";
+  json += ",{\"key\":\"octave_transpose\",\"name\":\"Octave\",\"type\":\"int\","
+          "\"min\":-3,\"max\":3}";
+  json += ",{\"key\":\"bpm\",\"name\":\"BPM\",\"type\":\"int\",\"min\":20,"
+          "\"max\":300}";
 
-  std::map<std::string, mopo::ValueDetails> all_details = mopo::Parameters::lookup_.getAllDetails();
+  std::map<std::string, mopo::ValueDetails> all_details =
+      mopo::Parameters::lookup_.getAllDetails();
   for (const auto &item : all_details) {
     const mopo::ValueDetails &details = item.second;
-    
+
     if (details.name == "beats_per_minute") {
       continue;
     }
-    
+
     std::string opt_json = get_param_options_json(details.name);
     if (!opt_json.empty()) {
       char buf[512];
       snprintf(buf, sizeof(buf), ",{\"key\":\"%s\",\"name\":\"%s\",%s}",
-               details.name.c_str(), details.display_name.c_str(), opt_json.c_str());
+               details.name.c_str(), details.display_name.c_str(),
+               opt_json.c_str());
       json += buf;
     } else {
       const char *type_str = (details.steps > 0) ? "int" : "float";
       char buf[512];
-      snprintf(buf, sizeof(buf), ",{\"key\":\"%s\",\"name\":\"%s\",\"type\":\"%s\",\"min\":%f,\"max\":%f}",
-               details.name.c_str(), details.display_name.c_str(), type_str, details.min, details.max);
+      snprintf(buf, sizeof(buf),
+               ",{\"key\":\"%s\",\"name\":\"%s\",\"type\":\"%s\",\"min\":%f,"
+               "\"max\":%f}",
+               details.name.c_str(), details.display_name.c_str(), type_str,
+               details.min, details.max);
       json += buf;
     }
   }
@@ -636,10 +686,17 @@ static void build_chain_params(helm_instance_t *inst) {
   for (int i = 0; i < 16; i++) {
     char buf[2048];
     snprintf(buf, sizeof(buf),
-             ",{\"key\":\"mod_%d_enable\",\"name\":\"Mod %d En\",\"type\":\"enum\",\"options\":[\"Off\",\"On\"]}"
-             ",{\"key\":\"mod_%d_source\",\"name\":\"Mod %d Src\",\"type\":\"enum\",\"options\":[\"none\",\"mono_lfo_1\",\"mono_lfo_2\",\"poly_lfo\",\"step_sequencer\",\"mod_envelope\",\"fil_envelope\",\"amp_envelope\",\"pitch_wheel\",\"mod_wheel\",\"aftertouch\",\"velocity\",\"note\",\"random\"]}"
-             ",{\"key\":\"mod_%d_dest\",\"name\":\"Mod %d Dst\",\"type\":\"enum\",\"options\":%s}"
-             ",{\"key\":\"mod_%d_amount\",\"name\":\"Mod %d Amt\",\"type\":\"float\",\"min\":-1.0,\"max\":1.0}",
+             ",{\"key\":\"mod_%d_enable\",\"name\":\"Mod %d "
+             "En\",\"type\":\"enum\",\"options\":[\"Off\",\"On\"]}"
+             ",{\"key\":\"mod_%d_source\",\"name\":\"Mod %d "
+             "Src\",\"type\":\"enum\",\"options\":[\"none\",\"mono_lfo_1\","
+             "\"mono_lfo_2\",\"poly_lfo\",\"step_sequencer\",\"mod_envelope\","
+             "\"fil_envelope\",\"amp_envelope\",\"pitch_wheel\",\"mod_wheel\","
+             "\"aftertouch\",\"velocity\",\"note\",\"random\"]}"
+             ",{\"key\":\"mod_%d_dest\",\"name\":\"Mod %d "
+             "Dst\",\"type\":\"enum\",\"options\":%s}"
+             ",{\"key\":\"mod_%d_amount\",\"name\":\"Mod %d "
+             "Amt\",\"type\":\"float\",\"min\":-1.0,\"max\":1.0}",
              i, i + 1, i, i + 1, i, i + 1, dest_opts.c_str(), i, i + 1);
     json += buf;
   }
@@ -875,7 +932,8 @@ static int v2_get_param(void *instance, const char *key, char *buf,
   if (strcmp(key, "bpm") == 0) {
     mopo::control_map &controls = inst->synth->getControls();
     if (controls.count("beats_per_minute")) {
-      return snprintf(buf, buf_len, "%f", controls["beats_per_minute"]->value() * 60.0f);
+      return snprintf(buf, buf_len, "%f",
+                      controls["beats_per_minute"]->value() * 60.0f);
     }
     return snprintf(buf, buf_len, "120.0");
   }
@@ -902,7 +960,8 @@ static int v2_get_param(void *instance, const char *key, char *buf,
   if (strcmp(key, "category_list") == 0) {
     std::string json = "[";
     for (size_t i = 0; i < inst->categories.size(); i++) {
-      if (i > 0) json += ",";
+      if (i > 0)
+        json += ",";
       json += "{\"index\":" + std::to_string(i) + ",\"label\":\"";
       for (const char *p = inst->categories[i].name; *p; p++) {
         if (*p == '"' || *p == '\\') {
@@ -944,13 +1003,16 @@ static int v2_get_param(void *instance, const char *key, char *buf,
     if (sscanf(key, "mod_%d_%s", &slot_idx, param_name) == 2) {
       if (slot_idx >= 0 && slot_idx < 16) {
         if (strcmp(param_name, "enable") == 0) {
-          return snprintf(buf, buf_len, "%d", inst->mod_slots[slot_idx].enabled ? 1 : 0);
+          return snprintf(buf, buf_len, "%d",
+                          inst->mod_slots[slot_idx].enabled ? 1 : 0);
         }
         if (strcmp(param_name, "source") == 0) {
-          return snprintf(buf, buf_len, "%d", inst->mod_slots[slot_idx].source_idx);
+          return snprintf(buf, buf_len, "%d",
+                          inst->mod_slots[slot_idx].source_idx);
         }
         if (strcmp(param_name, "dest") == 0) {
-          return snprintf(buf, buf_len, "%d", inst->mod_slots[slot_idx].dest_idx);
+          return snprintf(buf, buf_len, "%d",
+                          inst->mod_slots[slot_idx].dest_idx);
         }
         if (strcmp(param_name, "amount") == 0) {
           return snprintf(buf, buf_len, "%f", inst->mod_slots[slot_idx].amount);
@@ -964,7 +1026,8 @@ static int v2_get_param(void *instance, const char *key, char *buf,
   if (controls.count(key)) {
     std::string opt_json = get_param_options_json(key);
     if (!opt_json.empty()) {
-      return snprintf(buf, buf_len, "%d", (int)std::round(controls[key]->value()));
+      return snprintf(buf, buf_len, "%d",
+                      (int)std::round(controls[key]->value()));
     }
     return snprintf(buf, buf_len, "%f", controls[key]->value());
   }
