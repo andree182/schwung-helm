@@ -55,6 +55,10 @@ cd move-anything-helm
 
 In Shadow UI / Signal Chain, parameters are organized into navigable categories...
 
+The original interface features shown below was translated almost 1:1 into Move, except there are no visual representations of e.g. the waveforms and envelopes.
+
+![alt tag](http://tytel.org/static/images/helm_screenshot.png)
+
 ## License
 
 GPL-3.0 - See [LICENSE](LICENSE)
