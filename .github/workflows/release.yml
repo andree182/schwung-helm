@@ -48,8 +48,8 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           INSTALL_PATH=$(jq -r '.install_path // empty' release.json 2>/dev/null || echo "")
 
-          git fetch origin main
-          git checkout -f main
+          git fetch origin master
+          git checkout -f master
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
@@ -72,4 +72,4 @@ jobs:
 
           git add release.json
           git commit -m "chore: update release.json for ${{ github.ref_name }}" || echo "No changes to commit"
-          git push origin main
+          git push origin master
