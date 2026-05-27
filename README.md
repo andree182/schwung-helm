@@ -1,6 +1,6 @@
 # Helm for Schwung
 
-Hybrid synthesizer module based on [Helm](https://github.com/andree182/helm) by Matt Tytel.
+Polyphonic synthesizer module based on [Helm](https://github.com/andree182/helm) by Matt Tytel.
 
 ## Features
 
