@@ -696,22 +696,12 @@ static void build_chain_params(helm_instance_t *inst) {
     }
   }
 
-  std::string dest_opts = get_destinations_options_json();
   for (int i = 0; i < 16; i++) {
-    char buf[2048];
+    char buf[512];
     snprintf(buf, sizeof(buf),
-             ",{\"key\":\"mod_%d_enable\",\"name\":\"Mod %d "
-             "En\",\"type\":\"enum\",\"options\":[\"Off\",\"On\"]}"
-             ",{\"key\":\"mod_%d_source\",\"name\":\"Mod %d "
-             "Src\",\"type\":\"enum\",\"options\":[\"none\",\"mono_lfo_1\","
-             "\"mono_lfo_2\",\"poly_lfo\",\"step_sequencer\",\"mod_envelope\","
-             "\"fil_envelope\",\"amp_envelope\",\"pitch_wheel\",\"mod_wheel\","
-             "\"aftertouch\",\"velocity\",\"note\",\"random\"]}"
-             ",{\"key\":\"mod_%d_dest\",\"name\":\"Mod %d "
-             "Dst\",\"type\":\"enum\",\"options\":%s}"
              ",{\"key\":\"mod_%d_amount\",\"name\":\"Mod %d "
              "Amt\",\"type\":\"float\",\"min\":-1.0,\"max\":1.0}",
-             i, i + 1, i, i + 1, i, i + 1, dest_opts.c_str(), i, i + 1);
+             i, i + 1);
     json += buf;
   }
 
