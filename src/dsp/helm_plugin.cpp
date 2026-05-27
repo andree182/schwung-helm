@@ -679,11 +679,19 @@ static void build_chain_params(helm_instance_t *inst) {
     } else {
       const char *type_str = (details.steps > 0) ? "int" : "float";
       char buf[512];
-      snprintf(buf, sizeof(buf),
-               ",{\"key\":\"%s\",\"name\":\"%s\",\"type\":\"%s\",\"min\":%f,"
-               "\"max\":%f}",
-               details.name.c_str(), details.display_name.c_str(), type_str,
-               details.min, details.max);
+      if (strncmp(details.name.c_str(), "step_seq_", 9) == 0) {
+        snprintf(buf, sizeof(buf),
+                 ",{\"key\":\"%s\",\"name\":\"%s\",\"type\":\"%s\",\"min\":%f,"
+                 "\"max\":%f,\"step\":0.05}",
+                 details.name.c_str(), details.display_name.c_str(), type_str,
+                 details.min, details.max);
+      } else {
+        snprintf(buf, sizeof(buf),
+                 ",{\"key\":\"%s\",\"name\":\"%s\",\"type\":\"%s\",\"min\":%f,"
+                 "\"max\":%f}",
+                 details.name.c_str(), details.display_name.c_str(), type_str,
+                 details.min, details.max);
+      }
       json += buf;
     }
   }
