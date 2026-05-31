@@ -903,10 +903,30 @@ static void v2_set_param(void *instance, const char *key, const char *val) {
     }
 
     for (int i = 0; i < 16; i++) {
-      char mod_key[32];
-      snprintf(mod_key, sizeof(mod_key), "mod_%d_amount", i);
-      if (json_get_number(val, mod_key, &fval) == 0) {
+      char key_enable[32], key_source[32], key_dest[32], key_amount[32];
+      snprintf(key_enable, sizeof(key_enable), "mod_%d_enable", i);
+      snprintf(key_source, sizeof(key_source), "mod_%d_source", i);
+      snprintf(key_dest, sizeof(key_dest), "mod_%d_dest", i);
+      snprintf(key_amount, sizeof(key_amount), "mod_%d_amount", i);
+
+      bool changed = false;
+      if (json_get_number(val, key_enable, &fval) == 0) {
+        inst->mod_slots[i].enabled = ((int)fval != 0);
+        changed = true;
+      }
+      if (json_get_number(val, key_source, &fval) == 0) {
+        inst->mod_slots[i].source_idx = (int)fval;
+        changed = true;
+      }
+      if (json_get_number(val, key_dest, &fval) == 0) {
+        inst->mod_slots[i].dest_idx = (int)fval;
+        changed = true;
+      }
+      if (json_get_number(val, key_amount, &fval) == 0) {
         inst->mod_slots[i].amount = fval;
+        changed = true;
+      }
+      if (changed) {
         apply_slot_to_synth(inst, i);
       }
     }
@@ -1022,9 +1042,16 @@ static int v2_get_param(void *instance, const char *key, char *buf,
       }
     }
 
-    for (int i = 0; i < 16 && offset < buf_len - 64; i++) {
+    for (int i = 0; i < 16 && offset < buf_len - 256; i++) {
       offset += snprintf(buf + offset, buf_len - offset,
-                         ",\"mod_%d_amount\":%f", i, inst->mod_slots[i].amount);
+                         ",\"mod_%d_enable\":%d"
+                         ",\"mod_%d_source\":%d"
+                         ",\"mod_%d_dest\":%d"
+                         ",\"mod_%d_amount\":%f",
+                         i, inst->mod_slots[i].enabled ? 1 : 0,
+                         i, inst->mod_slots[i].source_idx,
+                         i, inst->mod_slots[i].dest_idx,
+                         i, inst->mod_slots[i].amount);
     }
 
     if (offset < buf_len - 2) {
