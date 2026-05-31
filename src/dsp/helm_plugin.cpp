@@ -842,10 +842,76 @@ static void v2_on_midi(void *instance, const uint8_t *msg, int len,
   }
 }
 
+static int json_get_number(const char *json, const char *key, float *out) {
+  if (!json || !key)
+    return -1;
+  char search[64];
+  snprintf(search, sizeof(search), "\"%s\":", key);
+  const char *pos = strstr(json, search);
+  if (!pos)
+    return -1;
+  pos += strlen(search);
+  while (*pos == ' ' || *pos == '\t')
+    pos++;
+  *out = (float)atof(pos);
+  return 0;
+}
+
 static void v2_set_param(void *instance, const char *key, const char *val) {
   helm_instance_t *inst = (helm_instance_t *)instance;
   if (!inst || !inst->synth)
     return;
+
+  if (strcmp(key, "state") == 0) {
+    float fval;
+
+    /* Restore preset first (sets all engine params to preset values) */
+    if (json_get_number(val, "preset", &fval) == 0) {
+      int idx = (int)fval;
+      if (idx >= 0 && idx < inst->preset_count) {
+        load_preset_by_index(inst, idx);
+      }
+    }
+
+    if (json_get_number(val, "octave_transpose", &fval) == 0) {
+      inst->octave_transpose = (int)fval;
+      if (inst->octave_transpose < -3)
+        inst->octave_transpose = -3;
+      if (inst->octave_transpose > 3)
+        inst->octave_transpose = 3;
+    }
+
+    if (json_get_number(val, "bpm", &fval) == 0) {
+      mopo::control_map &controls = inst->synth->getControls();
+      if (controls.count("beats_per_minute")) {
+        controls["beats_per_minute"]->set(fval / 60.0f);
+      }
+    }
+
+    mopo::control_map &controls = inst->synth->getControls();
+    std::map<std::string, mopo::ValueDetails> all_details =
+        mopo::Parameters::lookup_.getAllDetails();
+    for (const auto &item : all_details) {
+      const std::string &pname = item.first;
+      if (pname == "beats_per_minute")
+        continue;
+      if (controls.count(pname)) {
+        if (json_get_number(val, pname.c_str(), &fval) == 0) {
+          controls[pname]->set(fval);
+        }
+      }
+    }
+
+    for (int i = 0; i < 16; i++) {
+      char mod_key[32];
+      snprintf(mod_key, sizeof(mod_key), "mod_%d_amount", i);
+      if (json_get_number(val, mod_key, &fval) == 0) {
+        inst->mod_slots[i].amount = fval;
+        apply_slot_to_synth(inst, i);
+      }
+    }
+    return;
+  }
 
   if (strcmp(key, "preset") == 0) {
     int idx = atoi(val);
@@ -930,6 +996,42 @@ static int v2_get_param(void *instance, const char *key, char *buf,
   helm_instance_t *inst = (helm_instance_t *)instance;
   if (!inst)
     return -1;
+
+  if (strcmp(key, "state") == 0) {
+    int offset = 0;
+    offset += snprintf(buf + offset, buf_len - offset,
+                       "{\"preset\":%d,\"octave_transpose\":%d",
+                       inst->current_preset, inst->octave_transpose);
+
+    mopo::control_map &controls = inst->synth->getControls();
+    if (controls.count("beats_per_minute")) {
+      offset += snprintf(buf + offset, buf_len - offset,
+                         ",\"bpm\":%f", controls["beats_per_minute"]->value() * 60.0f);
+    }
+
+    std::map<std::string, mopo::ValueDetails> all_details =
+        mopo::Parameters::lookup_.getAllDetails();
+    for (const auto &item : all_details) {
+      const std::string &pname = item.first;
+      if (pname == "beats_per_minute")
+        continue;
+      if (controls.count(pname) && offset < buf_len - 128) {
+        float val = controls[pname]->value();
+        offset += snprintf(buf + offset, buf_len - offset,
+                           ",\"%s\":%f", pname.c_str(), val);
+      }
+    }
+
+    for (int i = 0; i < 16 && offset < buf_len - 64; i++) {
+      offset += snprintf(buf + offset, buf_len - offset,
+                         ",\"mod_%d_amount\":%f", i, inst->mod_slots[i].amount);
+    }
+
+    if (offset < buf_len - 2) {
+      offset += snprintf(buf + offset, buf_len - offset, "}");
+    }
+    return offset;
+  }
 
   if (strcmp(key, "preset") == 0)
     return snprintf(buf, buf_len, "%d", inst->current_preset);
