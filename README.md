@@ -7,8 +7,7 @@ Polyphonic synthesizer module based on [Helm](https://github.com/andree182/helm)
 +- the same as original, including modulations (editable in the Move interface):
 
 * 32 voice polyphony
-* Interactive visual interface
-* Powerful modulation system with live visual feedback
+* Integrates into Schwung UI and covers (probably) 100% of available configuration
 * Dual oscillators with cross modulation and up to 15 unison oscillators each
 * Sub oscillator with shuffle waveshaping
 * Oscillator feedback and saturation for waveshaping
