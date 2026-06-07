@@ -80,6 +80,10 @@ public:
   const juce::CriticalSection &getCriticalSection() override { return lock_; }
   SynthGuiInterface *getGuiInterface() override { return nullptr; }
 
+  void forceProcessModulationChanges() {
+    processModulationChanges();
+  }
+
   void prepare(double sample_rate, int buffer_size) {
     engine_.setSampleRate(sample_rate);
     engine_.setBufferSize(buffer_size);
@@ -373,6 +377,8 @@ static void load_preset_by_index(helm_instance_t *inst, int idx) {
   char msg[128];
   snprintf(msg, sizeof(msg), "Loaded preset [%d]: %s", idx, inst->preset_name);
   plugin_log(msg);
+
+  inst->synth->forceProcessModulationChanges();
   sync_mod_slots_from_synth(inst);
 }
 
@@ -651,6 +657,43 @@ static std::string get_param_options_json(const std::string &key) {
   return "";
 }
 
+static float get_param_step(const std::string &key) {
+  if (key.rfind("attack") != std::string::npos ||
+      key.rfind("decay") != std::string::npos ||
+      key.rfind("release") != std::string::npos) {
+    return 0.02f;
+  }
+  if (key.rfind("sustain") != std::string::npos) {
+    return 0.02f;
+  }
+  if (key.rfind("volume") != std::string::npos ||
+      key.rfind("mix") != std::string::npos ||
+      key.rfind("dry_wet") != std::string::npos ||
+      key.rfind("amplitude") != std::string::npos ||
+      key.rfind("depth") != std::string::npos ||
+      key.rfind("amount") != std::string::npos ||
+      key == "volume" || key == "noise_volume" ||
+      key == "osc_feedback_amount" || key == "filter_drive" ||
+      key == "distortion_drive" || key == "distortion_mix") {
+    return 0.01f;
+  }
+  if (key == "resonance" || key == "reverb_feedback" || key == "delay_feedback") {
+    return 0.01f;
+  }
+  if (key == "cutoff") {
+    return 0.5f;
+  }
+  if (key.rfind("frequency") != std::string::npos ||
+      key.rfind("rate") != std::string::npos) {
+    return 0.05f;
+  }
+  if (key.rfind("detune") != std::string::npos ||
+      key.rfind("tune") != std::string::npos) {
+    return 0.02f;
+  }
+  return 0.0f;
+}
+
 static void build_chain_params(helm_instance_t *inst) {
   std::string json = "[";
   json += "{\"key\":\"preset\",\"name\":\"Preset\",\"type\":\"int\",\"min\":0,"
@@ -686,11 +729,20 @@ static void build_chain_params(helm_instance_t *inst) {
                  details.name.c_str(), details.display_name.c_str(), type_str,
                  details.min, details.max);
       } else {
-        snprintf(buf, sizeof(buf),
-                 ",{\"key\":\"%s\",\"name\":\"%s\",\"type\":\"%s\",\"min\":%f,"
-                 "\"max\":%f}",
-                 details.name.c_str(), details.display_name.c_str(), type_str,
-                 details.min, details.max);
+        float step = get_param_step(details.name);
+        if (step > 0.0f) {
+          snprintf(buf, sizeof(buf),
+                   ",{\"key\":\"%s\",\"name\":\"%s\",\"type\":\"%s\",\"min\":%f,"
+                   "\"max\":%f,\"step\":%f}",
+                   details.name.c_str(), details.display_name.c_str(), type_str,
+                   details.min, details.max, step);
+        } else {
+          snprintf(buf, sizeof(buf),
+                   ",{\"key\":\"%s\",\"name\":\"%s\",\"type\":\"%s\",\"min\":%f,"
+                   "\"max\":%f}",
+                   details.name.c_str(), details.display_name.c_str(), type_str,
+                   details.min, details.max);
+        }
       }
       json += buf;
     }
@@ -700,7 +752,7 @@ static void build_chain_params(helm_instance_t *inst) {
     char buf[512];
     snprintf(buf, sizeof(buf),
              ",{\"key\":\"mod_%d_amount\",\"name\":\"Mod %d "
-             "Amt\",\"type\":\"float\",\"min\":-1.0,\"max\":1.0}",
+             "Amt\",\"type\":\"float\",\"min\":-1.0,\"max\":1.0,\"step\":0.02}",
              i, i + 1);
     json += buf;
   }
@@ -930,6 +982,8 @@ static void v2_set_param(void *instance, const char *key, const char *val) {
         apply_slot_to_synth(inst, i);
       }
     }
+
+    inst->synth->forceProcessModulationChanges();
     return;
   }
 
