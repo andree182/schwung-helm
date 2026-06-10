@@ -142,6 +142,12 @@ typedef struct helm_instance_t {
   juce::CriticalSection midi_lock;
   juce::MidiBuffer midi_queue;
 
+  /* Auto BPM Sync */
+  bool sync_bpm;
+  double last_clock_time;
+  int clock_count;
+  double clock_time_sum;
+
   /* Pre-built JSON strings */
   char *ui_hierarchy_json;
   char *chain_params_json;
@@ -155,6 +161,10 @@ typedef struct helm_instance_t {
     octave_transpose = 0;
     output_gain = 0.5f;
     memset(preset_name, 0, sizeof(preset_name));
+    sync_bpm = true;
+    last_clock_time = 0.0;
+    clock_count = 0;
+    clock_time_sum = 0.0;
     ui_hierarchy_json = nullptr;
     chain_params_json = nullptr;
 
@@ -550,7 +560,7 @@ static void build_ui_hierarchy(helm_instance_t *inst) {
         "\"knobs\":[],"
         "\"params\":[";
 
-  for (int i = 0; i < 16; i++) {
+  for (int i = 0; i < 8; i++) {
     char buf[128];
     snprintf(buf, sizeof(buf), "%s{\"level\":\"mod_%d\",\"label\":\"Slot %d\"}",
              (i > 0) ? "," : "", i, i + 1);
@@ -561,7 +571,7 @@ static void build_ui_hierarchy(helm_instance_t *inst) {
           "},";
 
   std::string dest_opts = get_destinations_options_json();
-  for (int i = 0; i < 16; i++) {
+  for (int i = 0; i < 8; i++) {
     char buf[2048];
     snprintf(buf, sizeof(buf),
              "\"mod_%d\":{"
@@ -580,15 +590,15 @@ static void build_ui_hierarchy(helm_instance_t *inst) {
               "{\"key\":\"mod_%d_amount\",\"name\":\"Amount\",\"type\":\"float\",\"min\":-1.0,\"max\":1.0}"
              "]"
              "}%s",
-             i, i, i, i, i, i, i, i, dest_opts.c_str(), i, (i < 15) ? "," : "");
+             i, i, i, i, i, i, i, i, dest_opts.c_str(), i, (i < 7) ? "," : "");
     json += buf;
   }
 
   json +=
       ",\"settings\":{"
         "\"children\":null,"
-        "\"knobs\":[\"bpm\",\"volume\",\"polyphony\",\"portamento\",\"portamento_type\",\"legato\",\"pitch_bend_range\",\"velocity_track\"],"
-        "\"params\":[\"bpm\",\"volume\",\"polyphony\",\"portamento\",\"portamento_type\",\"legato\",\"pitch_bend_range\",\"velocity_track\"]"
+        "\"knobs\":[\"bpm\",\"sync_bpm\",\"volume\",\"polyphony\",\"portamento\",\"portamento_type\",\"legato\",\"pitch_bend_range\",\"velocity_track\"],"
+        "\"params\":[\"bpm\",\"sync_bpm\",\"volume\",\"polyphony\",\"portamento\",\"portamento_type\",\"legato\",\"pitch_bend_range\",\"velocity_track\"]"
       "}"
     "}"
   "}";
@@ -702,6 +712,7 @@ static void build_chain_params(helm_instance_t *inst) {
           "\"min\":-3,\"max\":3}";
   json += ",{\"key\":\"bpm\",\"name\":\"BPM\",\"type\":\"int\",\"min\":20,"
           "\"max\":300}";
+  json += ",{\"key\":\"sync_bpm\",\"name\":\"Auto BPM\",\"type\":\"enum\",\"options\":[\"Off\",\"On\"]}";
 
   std::map<std::string, mopo::ValueDetails> all_details =
       mopo::Parameters::lookup_.getAllDetails();
@@ -876,6 +887,36 @@ static void v2_on_midi(void *instance, const uint8_t *msg, int len,
   uint8_t data1 = (len > 1) ? msg[1] : 0;
   uint8_t data2 = (len > 2) ? msg[2] : 0;
 
+  /* Auto BPM Sync calculation */
+  if (msg[0] == 0xF8) {
+    double now = juce::Time::getMillisecondCounterHiRes() / 1000.0;
+    if (inst->last_clock_time > 0.0) {
+      double delta = now - inst->last_clock_time;
+      if (delta > 0.005 && delta < 0.2) {
+        inst->clock_time_sum += delta;
+        inst->clock_count++;
+        if (inst->clock_count >= 24) {
+          double avg_delta = inst->clock_time_sum / inst->clock_count;
+          double bpm = 60.0 / (avg_delta * 24.0);
+          if (bpm >= 20.0 && bpm <= 300.0) {
+            if (inst->sync_bpm && inst->synth) {
+              mopo::control_map &controls = inst->synth->getControls();
+              if (controls.count("beats_per_minute")) {
+                controls["beats_per_minute"]->set(bpm / 60.0f);
+              }
+            }
+          }
+          inst->clock_time_sum = 0.0;
+          inst->clock_count = 0;
+        }
+      } else {
+        inst->clock_time_sum = 0.0;
+        inst->clock_count = 0;
+      }
+    }
+    inst->last_clock_time = now;
+  }
+
   /* Octave transpose for Note On / Note Off */
   if (status == 0x90 || status == 0x80) {
     int note = data1 + inst->octave_transpose * 12;
@@ -931,6 +972,10 @@ static void v2_set_param(void *instance, const char *key, const char *val) {
         inst->octave_transpose = -3;
       if (inst->octave_transpose > 3)
         inst->octave_transpose = 3;
+    }
+
+    if (json_get_number(val, "sync_bpm", &fval) == 0) {
+      inst->sync_bpm = (fval != 0.0f);
     }
 
     if (json_get_number(val, "bpm", &fval) == 0) {
@@ -1004,6 +1049,11 @@ static void v2_set_param(void *instance, const char *key, const char *val) {
     return;
   }
 
+  if (strcmp(key, "sync_bpm") == 0) {
+    inst->sync_bpm = (atoi(val) != 0);
+    return;
+  }
+
   if (strcmp(key, "octave_transpose") == 0) {
     inst->octave_transpose = atoi(val);
     if (inst->octave_transpose < -3)
@@ -1074,8 +1124,8 @@ static int v2_get_param(void *instance, const char *key, char *buf,
   if (strcmp(key, "state") == 0) {
     int offset = 0;
     offset += snprintf(buf + offset, buf_len - offset,
-                       "{\"preset\":%d,\"octave_transpose\":%d",
-                       inst->current_preset, inst->octave_transpose);
+                       "{\"preset\":%d,\"octave_transpose\":%d,\"sync_bpm\":%d",
+                       inst->current_preset, inst->octave_transpose, inst->sync_bpm ? 1 : 0);
 
     mopo::control_map &controls = inst->synth->getControls();
     if (controls.count("beats_per_minute")) {
@@ -1122,7 +1172,11 @@ static int v2_get_param(void *instance, const char *key, char *buf,
       return snprintf(buf, buf_len, "%f",
                       controls["beats_per_minute"]->value() * 60.0f);
     }
-    return snprintf(buf, buf_len, "120.0");
+    return -1;
+  }
+
+  if (strcmp(key, "sync_bpm") == 0) {
+    return snprintf(buf, buf_len, "%d", inst->sync_bpm ? 1 : 0);
   }
   if (strcmp(key, "preset_count") == 0)
     return snprintf(buf, buf_len, "%d", inst->preset_count);
