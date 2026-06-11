@@ -147,7 +147,7 @@
     "modulations": [
       {
         "source": "aftertouch",
-        "destination": "osc_1_tune",
+        "destination": "osc_1_volume",
         "amount": 0.79999999999999982236
       }
     ]
