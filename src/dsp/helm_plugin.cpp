@@ -712,7 +712,7 @@ static void build_chain_params(helm_instance_t *inst) {
           "\"min\":-3,\"max\":3}";
   json += ",{\"key\":\"bpm\",\"name\":\"BPM\",\"type\":\"int\",\"min\":20,"
           "\"max\":300}";
-  json += ",{\"key\":\"sync_bpm\",\"name\":\"Auto BPM\",\"type\":\"enum\",\"options\":[\"Off\",\"On\"]}";
+  json += ",{\"key\":\"sync_bpm\",\"short_name\":\"Auto\",\"name\":\"Auto BPM\",\"type\":\"enum\",\"options\":[\"Off\",\"On\"]}";
 
   std::map<std::string, mopo::ValueDetails> all_details =
       mopo::Parameters::lookup_.getAllDetails();
