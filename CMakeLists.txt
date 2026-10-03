@@ -86,3 +86,10 @@ target_link_libraries(helm-move-plugin PRIVATE
 
 # Link libstdc++ and libgcc statically to avoid GLIBCXX version issues on the Move
 target_link_options(helm-move-plugin PRIVATE "-static-libstdc++" "-static-libgcc")
+
+# glibc marks any DSO exporting an STB_GNU_UNIQUE symbol NODELETE, so dsp.so
+# would never unload: a reload keeps running the old image and its memory is
+# never freed. -fno-gnu-unique covers our own C++ (JUCE/mopo function-local
+# statics); --exclude-libs,ALL keeps the static libstdc++'s symbols local.
+target_compile_options(helm-move-plugin PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fno-gnu-unique>)
+target_link_options(helm-move-plugin PRIVATE "-Wl,--exclude-libs,ALL")
